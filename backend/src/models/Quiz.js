@@ -10,8 +10,18 @@ const quizSchema = new mongoose.Schema({
       type: { type: String, enum: ['In-Charge', 'In-Control'], required: true }
     }]
   }],
-  activeDate: { type: Date, unique: true }, // One active quiz per day
-  isActive: { type: Boolean, default: false }
+  status: { 
+    type: String, 
+    enum: ['DRAFT', 'APPROVED', 'ACTIVE', 'ARCHIVED'], 
+    default: 'DRAFT' 
+  },
+  generatedBy: { 
+    type: String, 
+    enum: ['MANUAL', 'AI'], 
+    default: 'MANUAL' 
+  },
+  requiresAdminApproval: { type: Boolean, default: false },
+  activeDate: { type: Date } // Unique enforcement moved to controller logic to allow drafts
 }, { timestamps: true });
 
 module.exports = mongoose.model('Quiz', quizSchema);

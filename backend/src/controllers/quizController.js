@@ -4,10 +4,16 @@ const QuizAttempt = require('../models/QuizAttempt');
 // Get active quiz for today
 const getActiveQuiz = async (req, res) => {
   try {
-    const today = new Date().setHours(0, 0, 0, 0);
+    // Get start of today in UTC
+    const now = new Date();
+    const datePart = now.toISOString().split('T')[0]; // Current UTC date YYYY-MM-DD
+    const startOfToday = new Date(`${datePart}T00:00:00.000Z`);
+    const endOfToday = new Date(startOfToday);
+    endOfToday.setDate(endOfToday.getDate() + 1);
+
     const quiz = await Quiz.findOne({ 
-      isActive: true, 
-      activeDate: { $gte: today, $lt: new Date(today).setDate(new Date(today).getDate() + 1) } 
+      status: 'ACTIVE', 
+      activeDate: { $gte: startOfToday, $lt: endOfToday } 
     });
 
     if (!quiz) {
@@ -17,9 +23,20 @@ const getActiveQuiz = async (req, res) => {
     // Check if user already attempted
     const attempt = await QuizAttempt.findOne({ userId: req.user.id, quizId: quiz._id });
     
+    // Convert to plain object to allow modification
+    const quizObj = quiz.toObject();
+
+    // Shuffle options for each question
+    quizObj.questions.forEach(q => {
+      for (let i = q.options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [q.options[i], q.options[j]] = [q.options[j], q.options[i]];
+      }
+    });
+
     // Return quiz and attempt data
     res.json({
-      quiz,
+      quiz: quizObj,
       alreadyAttempted: !!attempt,
       attempt: attempt || null
     });

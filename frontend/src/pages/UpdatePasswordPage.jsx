@@ -26,7 +26,7 @@ const UpdatePasswordPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', padding: '20px' }}>
       <div className="glass-card" style={{ padding: '40px', width: '100%', maxWidth: '400px' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Change Password</h2>
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '30px' }}>

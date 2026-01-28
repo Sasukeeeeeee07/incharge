@@ -180,7 +180,7 @@ const QuizPage = () => {
         </div>
       </header>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', flex: 1, padding: '40px', gap: '40px' }}>
+      <div className="quiz-container">
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <AnimatePresence mode="wait">
           <motion.div
