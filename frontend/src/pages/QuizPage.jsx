@@ -4,7 +4,7 @@ import Ladder from '../components/Ladder';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, UserCircle } from 'lucide-react';
 
 const QuizPage = () => {
   const [quiz, setQuiz] = useState(null);
@@ -153,13 +153,23 @@ const QuizPage = () => {
         <h2 className="text-xl font-bold text-accent-primary">In-Charge OR In-Control</h2>
         <div className="flex items-center gap-5">
           <span className="text-text-secondary hidden sm:inline">Welcome, {user?.name}</span>
+          <button onClick={() => navigate('/profile')} className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors">
+            <UserCircle size={18} /> <span className="hidden sm:inline">Profile</span>
+          </button>
           <button onClick={handleLogout} className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors">
             <LogOut size={18} /> <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </header>
       
-      <div className="flex-1 p-5 md:p-10 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 max-w-7xl mx-auto w-full items-center">
+      <div className="flex-1 p-5 md:p-10 flex flex-col items-center gap-8 max-w-7xl mx-auto w-full">
+        {/* Mobile Horizontal Ladder - Hidden on lg */}
+        <div className="w-full lg:hidden mb-4">
+          <p className="text-center text-xs font-bold text-text-secondary uppercase tracking-tighter mb-8 italic">Your Progress</p>
+          <Ladder currentStep={currentStep} orientation="horizontal" />
+        </div>
+
+        <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-center">
         <div className="flex flex-col justify-center max-w-2xl mx-auto w-full">
           <AnimatePresence mode="wait">
             <motion.div
@@ -194,6 +204,7 @@ const QuizPage = () => {
           <div className="flex-1 w-full flex justify-center">
             <Ladder currentStep={currentStep} />
           </div>
+        </div>
         </div>
       </div>
     </div>

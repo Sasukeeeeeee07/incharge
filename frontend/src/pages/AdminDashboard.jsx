@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Upload, Users, List, BarChart2, LogOut, Download, Menu, X, Plus } from 'lucide-react';
+import { Upload, Users, List, BarChart2, LogOut, Download, Menu, X, Plus, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import QuizList from '../components/QuizList';
@@ -98,14 +98,7 @@ const AdminDashboard = () => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="min-h-screen bg-bg-primary grid grid-cols-1 md:grid-cols-[250px_1fr] transition-all duration-300">
-      {/* Mobile Header */}
-      <div className="md:hidden p-5 bg-bg-secondary flex items-center justify-between border-b border-glass-border">
-         <div className="flex items-center gap-3">
-            <Menu onClick={toggleSidebar} className="cursor-pointer text-text-primary" />
-            <h2 className="text-xl text-accent-primary m-0">Admin Panel</h2>
-         </div>
-      </div>
+    <div className="min-h-screen bg-bg-primary flex transition-all duration-300">
 
       {/* Sidebar Overlay for Mobile */}
       {isSidebarOpen && (
@@ -116,7 +109,7 @@ const AdminDashboard = () => {
       )}
 
       {/* Sidebar */}
-      <div className={`dashboard-sidebar ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} bg-bg-secondary p-8 border-r border-glass-border h-screen fixed top-0 left-0 bottom-0 w-[250px] md:relative md:w-auto md:block z-50 transition-transform duration-300`}>
+      <div className={`dashboard-sidebar ${isSidebarOpen ? 'open' : ''} h-screen fixed top-0 left-0 bottom-0 w-[250px] md:sticky md:block z-50 transition-transform duration-300 flex-shrink-0`}>
         <div className="flex justify-between items-center mb-10">
           <h2 className="text-xl text-accent-primary font-bold">In-Charge OR In-Control</h2>
           <X className="md:hidden cursor-pointer text-text-primary" onClick={() => setIsSidebarOpen(false)} />
@@ -144,21 +137,37 @@ const AdminDashboard = () => {
             active={activeTab === 'quiz'} 
             onClick={() => { setActiveTab('quiz'); setIsSidebarOpen(false); }} 
           />
-
-        </div>
-        
-        <div className="mt-auto pt-10">
-          <SidebarItem 
-            icon={<LogOut size={20} />} 
-            label="Logout" 
-            onClick={handleLogout} 
-            danger
-          />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="p-5 md:p-10 overflow-y-auto h-[calc(100vh-80px)] md:h-screen">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
+        {/* Top Header */}
+        <header className="px-5 md:px-10 py-5 flex justify-between items-center border-b border-glass-border bg-bg-secondary/50 backdrop-blur-md sticky top-0 z-40">
+          <div className="flex items-center gap-3 md:hidden">
+            <Menu onClick={toggleSidebar} className="cursor-pointer text-text-primary" />
+            <h2 className="text-xl text-accent-primary m-0">Admin</h2>
+          </div>
+          <div className="hidden md:block">
+            {/* Empty space or breadcrumbs can go here */}
+          </div>
+          <div className="flex items-center gap-5 ml-auto">
+            <button 
+              onClick={() => navigate('/profile')} 
+              className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors"
+            >
+              <UserCircle size={18} /> <span className="hidden sm:inline">Profile</span>
+            </button>
+            <button 
+              onClick={handleLogout} 
+              className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors"
+            >
+              <LogOut size={18} /> <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
+        </header>
+
+        <div className="p-5 md:p-10 overflow-y-auto flex-1">
         {activeTab === 'users' && (
           <div>
           <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
@@ -301,6 +310,7 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'analytics' && <AnalyticsDashboard />}
+        </div>
       </div>
     </div>
   );

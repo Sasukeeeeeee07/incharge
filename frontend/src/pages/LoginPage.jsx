@@ -34,17 +34,17 @@ const LoginPage = () => {
         {/* Header */}
         <div className="text-center mb-10">
           <div className="relative inline-block mb-2">
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent drop-shadow-lg">
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent drop-shadow-lg">
               In-Charge
             </h1>
             <div className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full opacity-80" />
           </div>
           
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white/90 -tracking-tight mb-2">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-white/90 -tracking-tight mb-2">
             OR
           </h2>
           
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight bg-gradient-to-r from-slate-300 via-blue-400 to-purple-500 bg-clip-text text-transparent drop-shadow-lg">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight bg-gradient-to-r from-slate-300 via-blue-400 to-purple-500 bg-clip-text text-transparent drop-shadow-lg">
             In-Control
           </h1>
           

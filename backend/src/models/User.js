@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['admin', 'user'], default: 'user' },
   firstLoginRequired: { type: Boolean, default: true },
   accessFlag: { type: Boolean, default: true },
+  profileImage: { type: String, default: '' },
   lastActive: { type: Date, default: Date.now }
 }, { timestamps: true });
 

@@ -3,6 +3,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const quizRoutes = require('./routes/quizRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/quiz', quizRoutes);
+app.use('/api/user', userRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
