@@ -7,27 +7,60 @@ import QuizResultView from '../components/QuizResultView';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, UserCircle, History } from 'lucide-react';
+import { LogOut, UserCircle, History, PlayCircle, Calendar, ChevronRight } from 'lucide-react';
+
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return windowSize;
+};
 
 const QuizPage = () => {
+  // State Initialization from sessionStorage
+  const getSavedState = (key, defaultValue) => {
+    const saved = sessionStorage.getItem(`quiz_${key}`);
+    try { return saved ? JSON.parse(saved) : defaultValue; }
+    catch { return defaultValue; }
+  };
+
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+  const { width } = useWindowSize();
+  const isMobile = width < 1024;
+
+  // Track if we are restoring state from a previous navigation
+  const isRestored = React.useRef(sessionStorage.getItem('quiz_view') !== null);
+
   const [quiz, setQuiz] = useState(null);
-  const [selectedLang, setSelectedLang] = useState(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [currentStep, setCurrentStep] = useState(5); 
-  const [responses, setResponses] = useState([]);
+  const [selectedLang, setSelectedLang] = useState(getSavedState('selectedLang', null));
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(getSavedState('currentIndex', 0));
+  const [currentStep, setCurrentStep] = useState(getSavedState('currentStep', 5)); 
+  const [responses, setResponses] = useState(getSavedState('responses', []));
   const [completed, setCompleted] = useState(false);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showDetails, setShowDetails] = useState(false);
+  const [showDetails, setShowDetails] = useState(getSavedState('showDetails', false));
   
-  // New states for History
-  const [view, setView] = useState('quiz'); // 'quiz', 'history', 'result'
+  // Default to 'take-quiz' for a fresh experience
+  const [view, setView] = useState(getSavedState('view', 'take-quiz')); 
   const [history, setHistory] = useState([]);
-  const [selectedHistoryQuiz, setSelectedHistoryQuiz] = useState(null);
-
-  const { logout, user } = useAuth();
-  const navigate = useNavigate();
+  const [selectedHistoryQuiz, setSelectedHistoryQuiz] = useState(getSavedState('selectedHistoryQuiz', null));
 
   const languageLabels = {
     english: 'English',
@@ -37,9 +70,26 @@ const QuizPage = () => {
   };
 
   const handleLogout = () => {
+    sessionStorage.clear();
     logout();
     navigate('/login');
   };
+
+  // Persist state to sessionStorage
+  useEffect(() => {
+    const stateToSave = {
+      selectedLang,
+      currentIndex: currentQuestionIndex,
+      currentStep,
+      responses,
+      showDetails,
+      view,
+      selectedHistoryQuiz
+    };
+    Object.entries(stateToSave).forEach(([key, value]) => {
+      sessionStorage.setItem(`quiz_${key}`, JSON.stringify(value));
+    });
+  }, [selectedLang, currentQuestionIndex, currentStep, responses, showDetails, view, selectedHistoryQuiz]);
 
   useEffect(() => {
     fetchInitialData();
@@ -59,32 +109,28 @@ const QuizPage = () => {
       if (quizRes.status === 200) {
         const { quiz: quizData, alreadyAttempted, attempt } = quizRes.data;
         setQuiz(quizData);
-
+        
         if (alreadyAttempted) {
           setResult(attempt);
-          setResponses(attempt.responses);
-          setCompleted(true);
-          setView('history');
-          const lang = (quizData.languages && quizData.languages.length > 0) ? quizData.languages[0] : 'english';
-          setSelectedLang(lang);
-          
-          const questions = quizData.content?.[lang]?.questions || quizData.questions || [];
-          calculateStep(attempt.responses, questions.length);
-        } else {
-            setView('quiz');
-            if (quizData.languages && quizData.languages.length === 1) {
-              const lang = quizData.languages[0];
-              setSelectedLang(lang);
-              const questions = quizData.content?.[lang]?.questions || quizData.questions || [];
-              setCurrentStep(questions.length + 1);
-            } else if (!quizData.languages || quizData.languages.length === 0) {
-              setSelectedLang('english');
-              const questions = quizData.questions || [];
-              setCurrentStep(questions.length + 1);
-            }
+          // Only auto-navigate to history if we're NOT restoring a specific view (like results or a specific question)
+          if (!isRestored.current) {
+            setResponses(attempt.responses);
+            setCompleted(true);
+            setView('history');
+            const lang = (quizData.languages && quizData.languages.length > 0) ? quizData.languages[0] : 'english';
+            setSelectedLang(lang);
+            const questions = quizData.content?.[lang]?.questions || quizData.questions || [];
+            calculateStep(attempt.responses, questions.length);
+          }
+        } else if (!isRestored.current) {
+            // Fresh login, no saved view: definitely show the card first
+            setView('take-quiz');
+            setSelectedLang(null);
+            setCurrentQuestionIndex(0);
+            setResponses([]);
         }
-      } else {
-        // No quiz for today, auto-open history
+      } else if (!isRestored.current) {
+        // No quiz for today, auto-open history if no restored state
         setView('history');
       }
     } catch (err) {
@@ -160,28 +206,48 @@ const QuizPage = () => {
 
   const renderNavbar = () => (
     <header className="px-4 md:px-10 py-3 md:py-5 flex justify-between items-center border-b border-blue-200/10 bg-blue-900/50 backdrop-blur-md sticky top-0 z-40">
-      <h2 className="text-xl font-bold text-orange-500 uppercase tracking-widest cursor-pointer" onClick={() => {
-          if (completed) setView('result');
-          else if (quiz) setView('quiz');
-          else setView('history');
-      }}>
-        In-Charge OR In-Control
-      </h2>
+      <h2 
+  className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold uppercase tracking-widest cursor-pointer 
+              flex flex-col sm:flex-row md:flex-row items-center gap-0 sm:gap-1 md:gap-2" 
+  onClick={() => {
+    if (completed) setView('result');
+    else if (quiz) setView('take-quiz');
+    else setView('history');
+  }}
+>
+  <span className="text-center leading-tight">In-Charge</span> 
+  <span className="px-0 sm:px-1 md:px-3 text-white text-center text-xs sm:text-sm md:text-base">OR</span> 
+  <span className="text-center leading-tight text-orange-500">In-Control</span>
+</h2>
+
+
       <div className="flex items-center gap-2 md:gap-5">
         <span className="text-text-secondary hidden lg:inline">Welcome, {user?.name}</span>
         
+        {!completed && quiz && (
+          <button 
+            onClick={() => {
+              if (selectedLang) setView('quiz');
+              else setView('take-quiz');
+            }} 
+            className={`flex items-center gap-2 px-3 py-5 rounded-lg transition-colors ${view === 'take-quiz' || (view === 'quiz' && !completed) ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+          >
+            <PlayCircle size={18} /> <span className="hidden sm:inline">Take Quiz</span>
+          </button>
+        )}
+
         <button 
           onClick={() => setView('history')} 
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${view === 'history' || view === 'history-detail' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+          className={`flex items-center gap-2 px-3 py-5 rounded-lg transition-colors ${view === 'history' || view === 'history-detail' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
         >
           <History size={18} /> <span className="hidden sm:inline">Quiz History</span>
         </button>
 
-        <button onClick={() => navigate('/profile')} className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors">
+        <button onClick={() => navigate('/profile')} className="flex items-center gap-2 px-3 py-5 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5">
           <UserCircle size={18} /> <span className="hidden sm:inline">Profile</span>
         </button>
         
-        <button onClick={handleLogout} className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors">
+        <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-5 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5">
           <LogOut size={18} /> <span className="hidden sm:inline">Logout</span>
         </button>
       </div>
@@ -244,6 +310,58 @@ const QuizPage = () => {
       
       <main className="flex-1 p-4 md:p-6 lg:pt-8 flex flex-col items-center max-w-7xl mx-auto w-full overflow-hidden justify-center lg:justify-start">
         
+        {view === 'take-quiz' && quiz && (
+          <div className="w-full">
+            <h3 className="text-xl font-bold mb-6 text-blue-500 uppercase tracking-widest">Today's Quiz</h3>
+            <div className="flex flex-col md:flex-row pb-6 gap-6">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={() => {
+                  if (quiz.languages && quiz.languages.length === 1) {
+                    const lang = quiz.languages[0];
+                    setSelectedLang(lang);
+                    const questions = quiz.content?.[lang]?.questions || quiz.questions || [];
+                    setCurrentStep(questions.length + 1);
+                    setView('quiz');
+                  } else if (!quiz.languages || quiz.languages.length === 0) {
+                    setSelectedLang('english');
+                    const questions = quiz.questions || [];
+                    setCurrentStep(questions.length + 1);
+                    setView('quiz');
+                  } else {
+                    setView('quiz'); // Will trigger language selection
+                  }
+                }}
+                className="w-full md:max-w-[400px] glass-card p-8 cursor-pointer hover:border-blue-500/50 transition-all flex flex-col justify-between group relative overflow-hidden"
+              >
+
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-2 text-text-secondary text-sm">
+                    <Calendar size={14} />
+                    {new Date().toLocaleDateString()}
+                  </div>
+                  <div className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter bg-blue-500/20 text-blue-400">
+                    Active
+                  </div>
+                </div>
+
+                <h4 className="text-2xl font-bold mb-6 group-hover:text-blue-400 transition-colors">
+                  {quiz.title || "Daily Assessment"}
+                </h4>
+
+                <div className="flex justify-between items-center mt-4">
+                  <span className="text-xs text-text-secondary uppercase font-bold tracking-widest">Start Now</span>
+                  <div className="flex items-center gap-2 text-blue-500 group-hover:translate-x-2 transition-transform font-bold">
+                    <span>GO</span>
+                    <ChevronRight size={20} />
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        )}
+
         {view === 'history' && (
             <motion.div 
                 initial={{ opacity: 0 }} 
@@ -310,9 +428,19 @@ const QuizPage = () => {
         )}
 
         {view === 'quiz' && quiz && (
-            <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-center mt-4">
+            <div className="w-full flex flex-col lg:grid lg:grid-cols-[1fr_300px] gap-8 items-stretch mt-4">
+                {/* Mobile Ladder */}
+                <div className="w-full lg:hidden mb-4">
+                  <Ladder 
+                      currentStep={currentStep} 
+                      totalSteps={2 * (quiz.content?.[selectedLang?.toLowerCase()]?.questions?.length || quiz.questions?.length || 0) + 1}
+                      orientation="horizontal"
+                  />
+                </div>
+
                 <div className="flex flex-col justify-center max-w-2xl mx-auto w-full">
                     <AnimatePresence mode="wait">
+                        {/* ... existing question rendering ... */}
                         {(() => {
                             const langKey = selectedLang?.toLowerCase();
                             const questions = quiz.content?.[langKey]?.questions || quiz.questions;
@@ -347,12 +475,14 @@ const QuizPage = () => {
                     </AnimatePresence>
                 </div>
 
-                <div className="hidden lg:flex flex-col items-center bg-bg-secondary/30 rounded-3xl p-8 border border-glass-border h-[400px] xl:h-[600px] overflow-hidden">
-                    <h3 className="text-lg font-bold mb-8 text-text-secondary">Your Progress</h3>
+                {/* PC Ladder */}
+                <div className="hidden lg:flex flex-col items-center bg-bg-secondary/30 rounded-3xl p-8 border border-glass-border overflow-hidden">
+                    <h3 className="text-lg font-bold mb-8 text-text-secondary">Climb Leadership Ladder</h3>
                     <div className="flex-1 w-full flex justify-center overflow-y-auto scrollbar-hide">
                         <Ladder 
                             currentStep={currentStep} 
                             totalSteps={2 * (quiz.content?.[selectedLang?.toLowerCase()]?.questions?.length || quiz.questions?.length || 0) + 1}
+                            orientation="vertical"
                         />
                     </div>
                 </div>

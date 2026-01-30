@@ -131,29 +131,23 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-bg-primary py-10 px-5 md:py-20">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+    <div className="min-h-screen md:h-screen lg:h-screen bg-bg-primary p-2 sm:p-4 md:p-8 flex flex-col items-center justify-center overflow-x-hidden md:overflow-hidden">
+      <div className="max-w-3xl w-full mx-auto flex flex-col items-center justify-center">
+        <div className="w-full flex justify-between items-center mb-2 md:mb-6">
           <button 
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors"
           >
-            <ArrowLeft size={20} /> Back
-          </button>
-          <button 
-            onClick={() => navigate('/quiz')}
-            className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors"
-          >
-            <History size={18} /> Quiz History
+            <ArrowLeft size={16} /> <span className="text-sm md:text-base">Back</span>
           </button>
         </div>
 
-        <div className="glass-card p-8 md:p-12 relative overflow-hidden mb-10">
+        <div className="glass-card p-4 sm:p-6 md:p-10 relative overflow-hidden mb-2 md:mb-6 w-full">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-primary to-accent-secondary" />
           
-          <div className="flex flex-col md:flex-row items-center gap-8 mb-12">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-4 md:mb-10">
             <div className="relative group">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-glass-border overflow-hidden bg-bg-secondary flex items-center justify-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 rounded-full border-4 border-glass-border overflow-hidden bg-bg-secondary flex items-center justify-center">
                 {profile?.profileImage ? (
                   <img 
                     src={`http://localhost:5000${profile.profileImage}`} 
@@ -161,16 +155,17 @@ const ProfilePage = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <User size={64} className="text-text-secondary" />
+                  <User size={32} className="text-text-secondary md:hidden" />
                 )}
+                <User size={64} className="text-text-secondary hidden md:block" />
               </div>
               
               {isAdmin && (
                 <button 
                   onClick={() => fileInputRef.current.click()}
-                  className="absolute bottom-0 right-0 p-3 bg-accent-primary text-white rounded-full shadow-lg hover:scale-110 transition-transform"
+                  className="absolute bottom-0 right-0 p-2 md:p-3 bg-accent-primary text-white rounded-full shadow-lg hover:scale-110 transition-transform"
                 >
-                  <Camera size={20} />
+                  <Camera size={14} md:size={20} />
                 </button>
               )}
               <input 
@@ -183,17 +178,17 @@ const ProfilePage = () => {
             </div>
 
             <div className="text-center md:text-left">
-              <h1 className="text-3xl font-bold mb-2">{profile?.name}</h1>
-              <span className="px-4 py-1.5 rounded-full bg-accent-primary/10 text-accent-primary text-sm font-semibold uppercase tracking-wider">
+              <h1 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">{profile?.name}</h1>
+              <span className="px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-accent-primary/10 text-accent-primary text-[10px] md:text-sm font-semibold uppercase tracking-wider">
                 {profile?.role}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="text-sm text-text-secondary font-medium flex items-center gap-2">
-                <User size={16} /> Full Name
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+            <div className="space-y-1">
+              <label className="text-[10px] md:text-sm text-text-secondary font-medium flex items-center gap-2">
+                <User size={12} md:size={16} /> Full Name
               </label>
               <input 
                 type="text" 
@@ -201,13 +196,13 @@ const ProfilePage = () => {
                 value={profile?.name || ''} 
                 onChange={handleInputChange}
                 disabled={!isEditing}
-                className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-5 py-3 focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70"
+                className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-4 py-2 md:px-5 md:py-3 text-sm md:text-base focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-text-secondary font-medium flex items-center gap-2">
-                <Mail size={16} /> Email Address
+            <div className="space-y-1">
+              <label className="text-[10px] md:text-sm text-text-secondary font-medium flex items-center gap-2">
+                <Mail size={12} md:size={16} /> Email Address
               </label>
               <input 
                 type="email" 
@@ -215,13 +210,13 @@ const ProfilePage = () => {
                 value={profile?.email || ''} 
                 onChange={handleInputChange}
                 disabled={!isEditing}
-                className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-5 py-3 focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70"
+                className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-4 py-2 md:px-5 md:py-3 text-sm md:text-base focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-text-secondary font-medium flex items-center gap-2">
-                <Phone size={16} /> Phone Number
+            <div className="space-y-1">
+              <label className="text-[10px] md:text-sm text-text-secondary font-medium flex items-center gap-2">
+                <Phone size={12} md:size={16} /> Phone Number
               </label>
               <input 
                 type="text" 
@@ -229,13 +224,13 @@ const ProfilePage = () => {
                 value={profile?.mobile || ''} 
                 onChange={handleInputChange}
                 disabled={!isEditing}
-                className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-5 py-3 focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70"
+                className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-4 py-2 md:px-5 md:py-3 text-sm md:text-base focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-text-secondary font-medium flex items-center gap-2">
-                <User size={16} /> Company
+            <div className="space-y-1">
+              <label className="text-[10px] md:text-sm text-text-secondary font-medium flex items-center gap-2">
+                <User size={12} md:size={16} /> Company
               </label>
               <input 
                 type="text" 
@@ -243,15 +238,15 @@ const ProfilePage = () => {
                 value={profile?.company || ''} 
                 onChange={handleInputChange}
                 disabled={true} 
-                className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-5 py-3 focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70 shadow-sm"
+                className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-4 py-2 md:px-5 md:py-3 text-sm md:text-base focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70 shadow-sm"
               />
             </div>
           </div>
 
-          {error && <p className="mt-8 text-error bg-error/10 p-4 rounded-xl text-center font-medium">{error}</p>}
-          {success && <p className="mt-8 text-success bg-success/10 p-4 rounded-xl text-center font-medium">{success}</p>}
+          {error && <p className="mt-2 md:mt-4 text-error bg-error/10 p-2 md:p-3 rounded-xl text-center font-medium text-[10px] md:text-sm">{error}</p>}
+          {success && <p className="mt-2 md:mt-4 text-success bg-success/10 p-2 md:p-3 rounded-xl text-center font-medium text-[10px] md:text-sm">{success}</p>}
 
-          <div className="mt-12 flex flex-wrap justify-end gap-4">
+          <div className="mt-4 md:mt-10 flex flex-wrap justify-end gap-2 sm:gap-4">
             {!showPasswordReset && (
               <button 
                 onClick={() => setShowPasswordReset(true)}
