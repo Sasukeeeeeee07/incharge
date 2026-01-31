@@ -166,4 +166,30 @@ const exportUsers = async (req, res) => {
   }
 };
 
-module.exports = { bulkImport, getUsers, exportUsers };
+const updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { name, email, mobile, company, accessFlag } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (mobile) user.mobile = mobile;
+    if (company !== undefined) user.company = company;
+    if (accessFlag !== undefined) user.accessFlag = accessFlag;
+
+    await user.save();
+    res.json(user);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+};
+
+module.exports = { bulkImport, getUsers, exportUsers, updateUser };

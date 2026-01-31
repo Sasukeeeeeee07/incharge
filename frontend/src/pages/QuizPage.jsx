@@ -112,11 +112,12 @@ const QuizPage = () => {
         
         if (alreadyAttempted) {
           setResult(attempt);
+          setCompleted(true);
+          
           // Only auto-navigate to history if we're NOT restoring a specific view (like results or a specific question)
           if (!isRestored.current) {
             setResponses(attempt.responses);
-            setCompleted(true);
-            setView('history');
+            setView('take-quiz');
             const lang = (quizData.languages && quizData.languages.length > 0) ? quizData.languages[0] : 'english';
             setSelectedLang(lang);
             const questions = quizData.content?.[lang]?.questions || quizData.questions || [];
@@ -210,8 +211,7 @@ const QuizPage = () => {
   className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold uppercase tracking-widest cursor-pointer 
               flex flex-col sm:flex-row md:flex-row items-center gap-0 sm:gap-1 md:gap-2" 
   onClick={() => {
-    if (completed) setView('result');
-    else if (quiz) setView('take-quiz');
+    if (quiz) setView('take-quiz');
     else setView('history');
   }}
 >
@@ -224,12 +224,9 @@ const QuizPage = () => {
       <div className="flex items-center gap-2 md:gap-5">
         <span className="text-text-secondary hidden lg:inline">Welcome, {user?.name}</span>
         
-        {!completed && quiz && (
+        {quiz && (
           <button 
-            onClick={() => {
-              if (selectedLang) setView('quiz');
-              else setView('take-quiz');
-            }} 
+            onClick={() => setView('take-quiz')} 
             className={`flex items-center gap-2 px-3 py-5 rounded-lg transition-colors ${view === 'take-quiz' || (view === 'quiz' && !completed) ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
           >
             <PlayCircle size={18} /> <span className="hidden sm:inline">Take Quiz</span>
@@ -308,7 +305,7 @@ const QuizPage = () => {
     <div className="h-screen flex flex-col bg-bg-primary overflow-hidden">
       {renderNavbar()}
       
-      <main className="flex-1 p-4 md:p-6 lg:pt-8 flex flex-col items-center max-w-7xl mx-auto w-full overflow-hidden justify-center lg:justify-start">
+      <main className="flex-1 p-4 md:p-6 lg:pt-8 flex flex-col items-center max-w-7xl mx-auto w-full overflow-hidden justify-start">
         
         {view === 'take-quiz' && quiz && (
           <div className="w-full">
@@ -318,6 +315,11 @@ const QuizPage = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={() => {
+                  if (completed) {
+                    setView('result');
+                    return;
+                  }
+                  
                   if (quiz.languages && quiz.languages.length === 1) {
                     const lang = quiz.languages[0];
                     setSelectedLang(lang);
@@ -351,9 +353,11 @@ const QuizPage = () => {
                 </h4>
 
                 <div className="flex justify-between items-center mt-4">
-                  <span className="text-xs text-text-secondary uppercase font-bold tracking-widest">Start Now</span>
+                  <span className="text-xs text-text-secondary uppercase font-bold tracking-widest">
+                    {completed ? 'View Results' : 'Start Now'}
+                  </span>
                   <div className="flex items-center gap-2 text-blue-500 group-hover:translate-x-2 transition-transform font-bold">
-                    <span>GO</span>
+                    <span>{completed ? 'VIEW' : 'GO'}</span>
                     <ChevronRight size={20} />
                   </div>
                 </div>
@@ -373,17 +377,18 @@ const QuizPage = () => {
         )}
  
         {view === 'history-detail' && selectedHistoryQuiz && (
-            <div className="w-full flex-1 flex flex-col items-center overflow-hidden">
-                <div className="w-full flex justify-start mb-4">
+            <div className="w-full flex-1 flex flex-col items-center overflow-hidden relative">
+                <div className="absolute top-0 left-0 z-10">
                     <button 
                         onClick={() => setView('history')}
-                        className="text-orange-500 hover:underline flex items-center gap-2 text-sm"
+                        className="text-orange-500 hover:bg-orange-500/10 px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors"
                     >
                          &larr; Back to History
                     </button>
                 </div>
-                <QuizResultView 
-                    result={{ result: selectedHistoryQuiz.result }}
+                <div className="w-full flex-1 flex flex-col items-center pt-14 lg:pt-0">
+                    <QuizResultView 
+                        result={{ result: selectedHistoryQuiz.result }}
                     responses={selectedHistoryQuiz.responses}
                     quizData={{ 
                         content: selectedHistoryQuiz.quizContent,
@@ -411,6 +416,7 @@ const QuizPage = () => {
                         return step;
                     })()}
                 />
+                </div>
             </div>
         )}
 

@@ -81,24 +81,17 @@ const submitQuiz = async (req, res) => {
     });
 
     const totalQuestions = responses.length;
-    const netScore = inCharge - inControl;
-    
-    // Result logic based on distance to Top (totalQuestions), Middle (0), or Bottom (-totalQuestions)
+    // Result logic aligned with Speedometer UI thresholds
+    // n = totalQuestions, starting step = n+1, total steps = 2n+1
+    // normalizedValue = (currentStep - 1) / (totalSteps - 1)
+    // where currentStep = (n + 1) + (inCharge - inControl)
+    const normalizedValue = (totalQuestions + inCharge - inControl) / (2 * totalQuestions);
+
     let result = 'Balanced';
-    const distTop = Math.abs(totalQuestions - netScore);
-    const distMid = Math.abs(0 - netScore);
-    const distBot = Math.abs(-totalQuestions - netScore);
-
-    // Find the smallest distance
-    const minDist = Math.min(distTop, distMid, distBot);
-
-    // Map the smallest distance back to the state (prioritize Balanced in case of ties)
-    if (minDist === distMid) {
-      result = 'Balanced';
-    } else if (minDist === distTop) {
-      result = 'In-Charge';
-    } else if (minDist === distBot) {
+    if (normalizedValue < 0.33) {
       result = 'In-Control';
+    } else if (normalizedValue > 0.67) {
+      result = 'In-Charge';
     }
 
     const attempt = await QuizAttempt.create({

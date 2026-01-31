@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { bulkImport, getUsers, exportUsers } = require('../controllers/adminController');
+const { bulkImport, getUsers, exportUsers, updateUser } = require('../controllers/adminController');
 const { 
   createQuiz, 
   updateQuiz, 
@@ -10,7 +10,7 @@ const {
   activateQuiz,
   deleteQuiz 
 } = require('../controllers/quizAdminController');
-const { getAnalytics } = require('../controllers/analyticsController');
+const { getAnalytics, getUserHistory, getAttemptDetails } = require('../controllers/analyticsController');
 const { auth, admin } = require('../middleware/auth');
 const router = express.Router();
 
@@ -21,10 +21,13 @@ router.use(auth, admin);
 // User Management
 router.post('/import', upload.single('file'), bulkImport);
 router.get('/users', getUsers);
+router.put('/users/:userId', updateUser);
 router.get('/export', exportUsers);
 
 // Analytics
 router.get('/analytics', getAnalytics);
+router.get('/users/:userId/history', getUserHistory);
+router.get('/attempts/:attemptId/details', getAttemptDetails);
 
 // Quiz Management
 router.post('/quizzes', createQuiz); // Manual Create

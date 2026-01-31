@@ -35,35 +35,33 @@ const getAnalytics = async (req, res) => {
       }
     }
 
-    // 3. Stats Aggregation
+    // 3. Stats Aggregation (Based on ALL attempts of the filtered users)
     const totalUsers = filteredUsers.length;
+    const filteredUserIds = new Set(filteredUsers.map(u => u._id.toString()));
+    
+    // Filter attempts to only include those belonging to the selected users
+    const relevantAttempts = attempts.filter(att => filteredUserIds.has(att.userId.toString()));
     
     let totalInChargeScore = 0;
+    let totalQuestions = 0;
     let totalInControlScore = 0;
-    let attemptedCount = 0;
 
-    filteredUsers.forEach(u => {
-      if (u.latestAttempt) {
-        totalInChargeScore += u.latestAttempt.score.inCharge;
-        totalInControlScore += u.latestAttempt.score.inControl;
-        attemptedCount++;
-      }
+    relevantAttempts.forEach(att => {
+        const inCharge = att.score.inCharge || 0;
+        const inControl = att.score.inControl || 0;
+        totalInChargeScore += inCharge;
+        totalInControlScore += inControl;
+        totalQuestions += (inCharge + inControl);
     });
 
-    const avgInCharge = attemptedCount ? (totalInChargeScore / attemptedCount) : 0;
-    const avgInControl = attemptedCount ? (totalInControlScore / attemptedCount) : 0;
-
-    // Accuracy % (Assuming 10 questions total)
-    const inChargeAccuracy = (avgInCharge / 10) * 100;
-    const inControlAccuracy = (avgInControl / 10) * 100;
+    // Accuracy %
+    const inChargeAccuracy = totalQuestions ? (totalInChargeScore / totalQuestions) * 100 : 0;
+    const inControlAccuracy = totalQuestions ? (totalInControlScore / totalQuestions) * 100 : 0;
 
     // 4. Charts Data
 
-    // A. User Growth (Last 30 Days) - Based on Registration Date
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const userGrowth = [];
+    // A. Daily Activity (Last 30 Days) - Based on Quiz Attempts
+    const dailyActivity = [];
     const dateMap = new Map();
 
     // Initialize map for last 30 days
@@ -74,9 +72,9 @@ const getAnalytics = async (req, res) => {
         dateMap.set(dateStr, 0);
     }
 
-    // Count (using filtered users or ALL users? Usually User Growth is global, but let's stick to filtered context if implied, but typically Growth is for the platform. Let's use ALL users for Growth chart to make it useful, OR filtered if the user strictly wants "InCharge Growth". Let's use Filtered for consistency.)
-    filteredUsers.forEach(u => {
-        const dateStr = u.createdAt.toISOString().split('T')[0];
+    // Count attempts per day based on filtered/relevant attempts
+    relevantAttempts.forEach(att => {
+        const dateStr = new Date(att.completedAt).toISOString().split('T')[0];
         if (dateMap.has(dateStr)) {
             dateMap.set(dateStr, dateMap.get(dateStr) + 1);
         }
@@ -84,19 +82,19 @@ const getAnalytics = async (req, res) => {
 
     // Convert map to array (sorted)
     Array.from(dateMap.keys()).sort().forEach(date => {
-        userGrowth.push({ date, count: dateMap.get(date) });
+        dailyActivity.push({ date, count: dateMap.get(date) });
     });
 
-    // B. Role Distribution (Pie Chart)
+    // B. Role Distribution (Pie Chart) - Based on ALL attempts
     const roleDist = [
-        { name: 'In-Charge', value: 0, fill: '#6366f1' },
-        { name: 'In-Control', value: 0, fill: '#a855f7' },
+        { name: 'In-Charge', value: 0, fill: '#a855f7' }, // Purple (was In-Control's)
+        { name: 'In-Control', value: 0, fill: '#f43f5e' }, // Red
         { name: 'Balanced', value: 0, fill: '#22c55e' },
         { name: 'Unassessed', value: 0, fill: '#94a3b8' }
     ];
 
-    filteredUsers.forEach(u => {
-        const type = u.userType || 'Unassessed';
+    relevantAttempts.forEach(att => {
+        const type = att.result || 'Unassessed';
         const item = roleDist.find(r => r.name === type);
         if (item) item.value++;
     });
@@ -141,11 +139,12 @@ const getAnalytics = async (req, res) => {
     res.json({
       stats: {
         totalUsers,
-        avgScore: (avgInCharge + avgInControl) / 2,
+        totalInChargeScore,
+        totalQuestions,
         inChargeAccuracy,
         inControlAccuracy
       },
-      userGrowth,
+      dailyActivity,
       roleDistribution,
       languageDistribution,
       topUsers: topUsersData,
@@ -158,4 +157,72 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-module.exports = { getAnalytics };
+const getUserHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const history = await QuizAttempt.find({ userId })
+      .populate('quizId', 'title')
+      .sort({ completedAt: -1 });
+
+    const formattedHistory = history.map(att => ({
+      id: att._id,
+      quizTitle: att.quizId?.title || 'General Quiz',
+      score: {
+        inCharge: att.score.inCharge,
+        inControl: att.score.inControl
+      },
+      result: att.result,
+      language: att.language,
+      completedAt: att.completedAt
+    }));
+
+    res.json(formattedHistory);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch user history' });
+  }
+};
+
+const getAttemptDetails = async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+    
+    const attempt = await QuizAttempt.findById(attemptId).populate('quizId');
+    if (!attempt) return res.status(404).json({ error: 'Attempt not found' });
+
+    const quiz = attempt.quizId;
+    const lang = attempt.language || 'english';
+    
+    // Get questions for the used language
+    const quizContent = quiz.content instanceof Map ? quiz.content.get(lang) : quiz.content[lang];
+    const questions = quizContent?.questions || quiz.questions || [];
+
+    const details = attempt.responses.map(resp => {
+      const question = questions.find(q => q._id.toString() === resp.questionId.toString());
+      if (!question) return null;
+
+      const selectedOption = question.options.find(opt => opt.type === resp.answerType);
+      
+      return {
+        questionText: question.questionText,
+        selectedAnswer: selectedOption?.text || 'Unknown',
+        answerType: resp.answerType
+      };
+    }).filter(d => d !== null);
+
+    res.json({
+      quizTitle: quizContent?.title || quiz.title,
+      result: attempt.result,
+      score: attempt.score,
+      totalQuestions: details.length,
+      completedAt: attempt.completedAt,
+      details
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch attempt details' });
+  }
+};
+
+module.exports = { getAnalytics, getUserHistory, getAttemptDetails };

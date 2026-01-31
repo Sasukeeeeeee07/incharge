@@ -22,7 +22,7 @@ const QuizHistory = ({ history, onSelectQuiz }) => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: idx * 0.1 }}
                 onClick={() => onSelectQuiz(item)}
-                className="w-full md:min-w-[350px] glass-card p-6 cursor-pointer hover:border-accent-primary/50 transition-all flex flex-col justify-between snap-start group"
+                className="w-full md:max-w-[400px] glass-card p-8 cursor-pointer hover:border-blue-500/50 transition-all flex flex-col justify-between group relative overflow-hidden"
             >
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex flex-col gap-1">
