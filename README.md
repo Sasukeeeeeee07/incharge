@@ -6,14 +6,16 @@ A modern, gamified assessment application designed to help users identify their 
 The application consists of a polished user-facing quiz experience and a robust administration panel. It features a unique "Ladder" visualization that tracks user progress in real-time as they answer assessment questions.
 
 ### Key Features
-- **Gamified Quiz**: 10-question assessment with a dynamic "Ladder" UI using Framer Motion.
-- **Email-Based Role Resolution**: Secure login that automatically identifies Admin vs. User roles based on registered email.
+- **Multi-Language Support**: Complete localization for quizzes in English, Hindi, Gujarati, and Malayalam.
+- **Enhanced User Experience**:
+  - **Dynamic Theme**: Modern Blue/Orange color scheme with glassmorphism effects.
+  - **Responsive Layouts**: Optimized navigation with mobile-friendly sidebar and header controls.
+  - **Visual Feedback**: Real-time speedometer and ladder visualization for assessment progress.
 - **Admin Dashboard**:
   - **Analytics**: Comprehensive visual data using Recharts, including user growth, role distribution, and accuracy comparisons.
   - **User Management**: Bulk import/export users via CSV or Excel (XLSX).
-  - **Quiz Management**: Create, edit, and schedule quizzes.
+  - **Quiz Management**: Create, edit, and schedule quizzes with multi-language capabilities.
   - **AI Generation**: Integrated AI capabilities to generate quiz drafts instantly.
-- **Responsive Design**: Fully optimized for mobile, tablet, and desktop views using Tailwind CSS.
 
 ## 🛠 Tech Stack
 
