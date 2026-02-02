@@ -1,19 +1,11 @@
 import React from 'react';
-import { Edit, CheckCircle, Play, Trash2 } from 'lucide-react';
+import { Edit, Play, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import API_BASE_URL from '../config/apiConfig';
 
 const QuizList = ({ quizzes, onEdit, onRefresh }) => {
 
-  const handleApprove = async (id) => {
-    if (!window.confirm('Are you sure you want to approve this quiz?')) return;
-    try {
-      await axios.put(`${API_BASE_URL}/admin/quizzes/${id}/approve`);
-      onRefresh();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Approval failed');
-    }
-  };
+
 
   const handleActivate = async (quiz) => {
     const defaultDate = quiz.activeDate ? new Date(quiz.activeDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
@@ -40,7 +32,6 @@ const QuizList = ({ quizzes, onEdit, onRefresh }) => {
   const getStatusStyles = (status) => {
     switch (status) {
       case 'DRAFT': return 'bg-white/5 text-text-secondary border-text-secondary/50';
-      case 'APPROVED': return 'bg-accent-primary/10 text-accent-primary border-accent-primary/50';
       case 'ACTIVE': return 'bg-success/10 text-success border-success/50';
       case 'ARCHIVED': return 'bg-error/10 text-error border-error/50';
       default: return 'bg-white/5 text-gray-400 border-gray-500/50';
@@ -82,21 +73,12 @@ const QuizList = ({ quizzes, onEdit, onRefresh }) => {
                 <Edit size={14} /> Edit
               </button>
               
-              {quiz.status === 'DRAFT' && (
-                <button 
-                  onClick={() => handleApprove(quiz._id)} 
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success/10 border border-success/20 text-xs font-medium text-success hover:bg-success/20 transition-all"
-                >
-                  <CheckCircle size={14} /> Approve
-                </button>
-              )}
-
-              {(quiz.status === 'DRAFT' || quiz.status === 'APPROVED') && (
+              {(quiz.status === 'DRAFT' || quiz.status === 'APPROVED' || quiz.status === 'ACTIVE') && (
                 <button 
                   onClick={() => handleActivate(quiz)} 
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-primary/10 border border-accent-primary/20 text-xs font-medium text-accent-primary hover:bg-accent-primary/20 transition-all"
                 >
-                  <Play size={14} /> {quiz.status === 'DRAFT' ? "Approve & Activate" : "Activate"}
+                  <Play size={14} /> Activate
                 </button>
               )}
 
@@ -157,16 +139,10 @@ const QuizList = ({ quizzes, onEdit, onRefresh }) => {
                       <Trash2 size={18} />
                     </button>
 
-                    {quiz.status === 'DRAFT' && (
-                      <button onClick={() => handleApprove(quiz._id)} title="Approve" className="text-success hover:text-green-400 transition-colors">
-                        <CheckCircle size={18} />
-                      </button>
-                    )}
-
                     {(quiz.status === 'DRAFT' || quiz.status === 'APPROVED') && (
                       <button 
                         onClick={() => handleActivate(quiz)} 
-                        title={quiz.status === 'DRAFT' ? "Approve & Activate" : "Activate"}
+                        title="Activate"
                         className="text-accent-primary hover:text-indigo-400 transition-colors"
                       >
                         <Play size={18} />

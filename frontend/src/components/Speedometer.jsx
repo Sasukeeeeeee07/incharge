@@ -21,9 +21,9 @@ const Speedometer = ({ currentStep, totalSteps }) => {
   }, [currentStep]);
 
   const segmentColors = {
-    'in-control': '#f97316',
+    'in-control': '#3b82f6',
     'balanced': '#94a3b8',
-    'in-charge': '#3b82f6'
+    'in-charge': '#f97316'
   };
 
   return (
@@ -37,8 +37,8 @@ const Speedometer = ({ currentStep, totalSteps }) => {
         {/* Intense Animated Background Glow */}
         <motion.div 
           className={`absolute inset-0 bg-gradient-to-br ${
-            activeSegment === 'in-control' ? 'from-orange-500/25 via-orange-500/10' : 
-            activeSegment === 'balanced' ? 'from-slate-500/25 via-slate-500/10' : 'from-blue-500/25 via-blue-500/10'
+            activeSegment === 'in-control' ? 'from-blue-500/25 via-blue-500/10' : 
+            activeSegment === 'balanced' ? 'from-slate-500/25 via-slate-500/10' : 'from-orange-500/25 via-orange-500/10'
           } to-transparent rounded-[2rem] pointer-events-none blur-2xl`}
           animate={{ 
             opacity: needleSettled ? [0.4, 0.8, 0.4] : 0.4,
@@ -49,8 +49,8 @@ const Speedometer = ({ currentStep, totalSteps }) => {
 
         {/* Radial Glow Overlay */}
         <div className={`absolute inset-0 bg-gradient-radial ${
-          activeSegment === 'in-control' ? 'from-orange-500/20' : 
-          activeSegment === 'balanced' ? 'from-slate-500/20' : 'from-blue-500/20'
+          activeSegment === 'in-control' ? 'from-blue-500/20' : 
+          activeSegment === 'balanced' ? 'from-slate-500/20' : 'from-orange-500/20'
         } via-transparent to-transparent rounded-[2rem] pointer-events-none`} />
 
         {/* Speedometer SVG Container */}
@@ -102,7 +102,7 @@ const Speedometer = ({ currentStep, totalSteps }) => {
             <motion.path 
               d="M 30 120 A 90 90 0 0 1 104.4 31.4"
               fill="none" 
-              stroke="#f97316"
+              stroke="#3b82f6"
               strokeWidth="15"
               strokeLinecap="round"
               animate={{ 
@@ -112,7 +112,7 @@ const Speedometer = ({ currentStep, totalSteps }) => {
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               style={{ 
                 filter: activeSegment === 'in-control' && needleSettled 
-                  ? 'drop-shadow(0 0 25px #f97316) drop-shadow(0 0 40px #f97316)' 
+                  ? 'drop-shadow(0 0 25px #3b82f6) drop-shadow(0 0 40px #3b82f6)' 
                   : 'none' 
               }}
             />
@@ -138,7 +138,7 @@ const Speedometer = ({ currentStep, totalSteps }) => {
             <motion.path 
               d="M 135.6 31.4 A 90 90 0 0 1 210 120"
               fill="none" 
-              stroke="#3b82f6"
+              stroke="#f97316"
               strokeWidth="15"
               strokeLinecap="round"
               animate={{ 
@@ -148,7 +148,7 @@ const Speedometer = ({ currentStep, totalSteps }) => {
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               style={{ 
                 filter: activeSegment === 'in-charge' && needleSettled 
-                  ? 'drop-shadow(0 0 25px #3b82f6) drop-shadow(0 0 40px #3b82f6)' 
+                  ? 'drop-shadow(0 0 25px #f97316) drop-shadow(0 0 40px #f97316)' 
                   : 'none' 
               }}
             />
@@ -195,8 +195,8 @@ const Speedometer = ({ currentStep, totalSteps }) => {
               {/* Glowing Accent Tip */}
               <motion.div 
                 className={`absolute top-0 inset-x-0 h-[20%] rounded-t-full bg-gradient-to-b ${
-                  activeSegment === 'in-control' ? 'from-orange-500' : 
-                  activeSegment === 'balanced' ? 'from-slate-400' : 'from-blue-500'
+                  activeSegment === 'in-control' ? 'from-blue-500' : 
+                  activeSegment === 'balanced' ? 'from-slate-400' : 'from-orange-500'
                 } to-transparent`}
                 animate={{ 
                   opacity: needleSettled ? [0.8, 1, 0.8] : 0.7,
@@ -223,8 +223,8 @@ const Speedometer = ({ currentStep, totalSteps }) => {
             >
               <motion.div 
                 className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${
-                  activeSegment === 'in-control' ? 'bg-orange-500' : 
-                  activeSegment === 'balanced' ? 'bg-slate-400' : 'bg-blue-500'
+                  activeSegment === 'in-control' ? 'bg-blue-500' : 
+                  activeSegment === 'balanced' ? 'bg-slate-400' : 'bg-orange-500'
                 }`}
                 animate={{
                   boxShadow: needleSettled 
@@ -249,11 +249,11 @@ const Speedometer = ({ currentStep, totalSteps }) => {
           >
             <motion.div 
               className={`w-2 h-2 rounded-full mb-1 ${
-                activeSegment === 'in-control' ? 'bg-orange-500' : 'bg-orange-500/30'
+                activeSegment === 'in-control' ? 'bg-blue-500' : 'bg-blue-500/30'
               }`}
               animate={{
                 boxShadow: activeSegment === 'in-control' && needleSettled
-                  ? ['0 0 8px #f97316', '0 0 16px #f97316', '0 0 8px #f97316']
+                  ? ['0 0 8px #3b82f6', '0 0 16px #3b82f6', '0 0 8px #3b82f6']
                   : '0 0 0px transparent'
               }}
               transition={{ 
@@ -262,10 +262,10 @@ const Speedometer = ({ currentStep, totalSteps }) => {
             />
             <motion.span 
               className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${
-                activeSegment === 'in-control' ? 'text-orange-500' : 'text-orange-500/60'
+                activeSegment === 'in-control' ? 'text-blue-500' : 'text-blue-500/60'
               }`}
               animate={{
-                textShadow: activeSegment === 'in-control' && needleSettled ? '0 0 10px #f97316' : '0 0 0px transparent'
+                textShadow: activeSegment === 'in-control' && needleSettled ? '0 0 10px #3b82f6' : '0 0 0px transparent'
               }}
               transition={{ duration: 0.8, ease: "easeInOut" }}
             >In-Control</motion.span>
@@ -313,11 +313,11 @@ const Speedometer = ({ currentStep, totalSteps }) => {
           >
             <motion.div 
               className={`w-2 h-2 rounded-full mb-1 ${
-                activeSegment === 'in-charge' ? 'bg-blue-500' : 'bg-blue-500/30'
+                activeSegment === 'in-charge' ? 'bg-orange-500' : 'bg-orange-500/30'
               }`}
               animate={{
                 boxShadow: activeSegment === 'in-charge' && needleSettled
-                  ? ['0 0 8px #3b82f6', '0 0 16px #3b82f6', '0 0 8px #3b82f6']
+                  ? ['0 0 8px #f97316', '0 0 16px #f97316', '0 0 8px #f97316']
                   : '0 0 0px transparent'
               }}
               transition={{ 
@@ -326,10 +326,10 @@ const Speedometer = ({ currentStep, totalSteps }) => {
             />
             <motion.span 
               className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${
-                activeSegment === 'in-charge' ? 'text-blue-500' : 'text-blue-500/60'
+                activeSegment === 'in-charge' ? 'text-orange-500' : 'text-orange-500/60'
               }`}
               animate={{
-                textShadow: activeSegment === 'in-charge' && needleSettled ? '0 0 10px #3b82f6' : '0 0 0px transparent'
+                textShadow: activeSegment === 'in-charge' && needleSettled ? '0 0 10px #f97316' : '0 0 0px transparent'
               }}
               transition={{ duration: 0.8, ease: "easeInOut" }}
             >In-Charge</motion.span>
@@ -345,8 +345,8 @@ const Speedometer = ({ currentStep, totalSteps }) => {
             transition={{ delay: 1.5, type: "spring", stiffness: 100 }}
             style={{ 
               backgroundImage: `linear-gradient(135deg, ${
-                activeSegment === 'in-control' ? '#f97316, #fb923c, #fbbf24' : 
-                activeSegment === 'balanced' ? '#94a3b8, #cbd5e1, #e2e8f0' : '#3b82f6, #60a5fa, #93c5fd'
+                activeSegment === 'in-control' ? '#3b82f6, #60a5fa, #93c5fd' : 
+                activeSegment === 'balanced' ? '#94a3b8, #cbd5e1, #e2e8f0' : '#f97316, #fb923c, #fbbf24'
               })`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -363,8 +363,8 @@ const Speedometer = ({ currentStep, totalSteps }) => {
           <div className="w-28 sm:w-36 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/10 shadow-inner">
             <motion.div 
               className={`h-full rounded-full ${
-                activeSegment === 'in-control' ? 'bg-gradient-to-r from-orange-500 to-orange-400' : 
-                activeSegment === 'balanced' ? 'bg-gradient-to-r from-slate-500 to-slate-400' : 'bg-gradient-to-r from-blue-500 to-blue-400'
+                activeSegment === 'in-control' ? 'bg-gradient-to-r from-blue-500 to-blue-400' : 
+                activeSegment === 'balanced' ? 'bg-gradient-to-r from-slate-500 to-slate-400' : 'bg-gradient-to-r from-orange-500 to-orange-400'
               }`}
               initial={{ width: 0 }}
               animate={{ width: `${normalizedValue * 100}%` }}

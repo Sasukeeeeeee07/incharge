@@ -10,21 +10,56 @@ const getAnalytics = async (req, res) => {
     
     // Get latest attempt for each user
     const attempts = await QuizAttempt.find().sort({ completedAt: -1 });
-    const latestAttemptsMap = new Map();
-    
+    // Group attempts by user
+    const userAttemptsMap = new Map();
     attempts.forEach(att => {
-      if (!latestAttemptsMap.has(att.userId.toString())) {
-        latestAttemptsMap.set(att.userId.toString(), att);
+      if (!userAttemptsMap.has(att.userId.toString())) {
+        userAttemptsMap.set(att.userId.toString(), []);
       }
+      userAttemptsMap.get(att.userId.toString()).push(att);
     });
 
     // 2. Map Users to Data & Apply Filter
     let filteredUsers = users.map(user => {
-      const attempt = latestAttemptsMap.get(user._id.toString());
+      const userAttempts = userAttemptsMap.get(user._id.toString()) || [];
+      const latestAttempt = userAttempts.length > 0 ? userAttempts[0] : null; // Attempts are already sorted desc
+
+      // Calculate Aggregate Result
+      if (userAttempts.length === 0) {
+        return {
+          ...user.toObject(),
+          latestAttempt: null,
+          userType: 'Unassessed'
+        };
+      }
+
+      const counts = { 'In-Charge': 0, 'In-Control': 0, 'Balanced': 0 };
+      userAttempts.forEach(att => {
+        if (counts[att.result] !== undefined) {
+          counts[att.result]++;
+        }
+      });
+
+      let aggregateResult = 'Unassessed';
+
+      // Special Case: Equal In-Charge and In-Control implies Balanced
+      if (counts['In-Charge'] === counts['In-Control']) {
+        aggregateResult = 'Balanced';
+      } else {
+        // Find the result with the max count
+        let maxCount = -1;
+        ['In-Charge', 'In-Control', 'Balanced'].forEach(type => {
+          if (counts[type] > maxCount) {
+            maxCount = counts[type];
+            aggregateResult = type;
+          }
+        });
+      }
+
       return {
         ...user.toObject(),
-        latestAttempt: attempt || null,
-        userType: attempt ? attempt.result : 'Unassessed'
+        latestAttempt: latestAttempt,
+        userType: aggregateResult
       };
     });
 
@@ -113,15 +148,26 @@ const getAnalytics = async (req, res) => {
         attempts: langCounts[lang]
     }));
 
-    // D. Top 5 Users (by In-Charge Score desc, then In-Control)
-    // Or just "Score" meaning "Highest Score in their dominant trait"
+    // D. Top 5 Users (by Cumulative In-Charge Score)
     const topUsersData = filteredUsers
-        .filter(u => u.latestAttempt)
-        .map(u => ({
-            name: u.name,
-            score: Math.max(u.latestAttempt.score.inCharge, u.latestAttempt.score.inControl),
-            type: u.userType
-        }))
+        .map(u => {
+            const userAttempts = userAttemptsMap.get(u._id.toString()) || [];
+            if (userAttempts.length === 0) return null;
+
+            let totalInCharge = 0;
+            // Removed: let totalInControl = 0;
+            userAttempts.forEach(att => {
+                totalInCharge += (att.score.inCharge || 0);
+                // totalInControl += (att.score.inControl || 0);
+            });
+
+            return {
+                name: u.name,
+                score: totalInCharge, // Score is strictly 'In-Charge' totals
+                type: u.userType
+            };
+        })
+        .filter(u => u) // Remove nulls
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
 

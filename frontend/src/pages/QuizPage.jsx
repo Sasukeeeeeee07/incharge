@@ -251,7 +251,7 @@ const QuizPage = () => {
           <UserCircle size={18} /> <span className="hidden sm:inline">Profile</span>
         </button>
         
-        <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-5 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5">
+        <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-5 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-red-900">
           <LogOut size={18} /> <span className="hidden sm:inline">Logout</span>
         </button>
       </div>
@@ -432,7 +432,7 @@ const QuizPage = () => {
         {view === 'quiz' && quiz && (
             <div className="w-full flex flex-col lg:grid lg:grid-cols-[1fr_300px] gap-8 items-stretch mt-4">
                 {/* Mobile Ladder */}
-                <div className="w-full lg:hidden mb-4">
+                <div className="w-full lg:hidden mb-4 mt-8 px-4">
                   <Ladder 
                       currentStep={currentStep} 
                       totalSteps={2 * ((quiz.content?.[selectedLang?.toLowerCase()]?.questions?.length || quiz.questions?.length || 0)) + 1}

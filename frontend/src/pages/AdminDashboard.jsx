@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../config/apiConfig';
-import { Upload, Users, List, BarChart2, LogOut, Download, X, Plus, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import QuizList from '../components/QuizList';
 import QuizEditor from '../components/QuizEditor';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
+import UserPerformance from '../components/UserPerformance';
+import { Upload, Users, List, BarChart2, LogOut, Download, X, Plus, UserCircle, TrendingUp } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('analytics');
@@ -177,6 +178,13 @@ const AdminDashboard = () => {
         </button>
 
         <button 
+          onClick={() => setActiveTab('performance')} 
+          className={`flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'performance' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+        >
+          <TrendingUp size={18} /> <span className="hidden sm:inline">User Performance</span>
+        </button>
+
+        <button 
           onClick={() => setActiveTab('users')} 
           className={`flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'users' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
         >
@@ -196,7 +204,7 @@ const AdminDashboard = () => {
           <UserCircle size={18} /> <span className="hidden sm:inline">Profile</span>
         </button>
         
-        <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5 whitespace-nowrap">
+        <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-red-900 whitespace-nowrap">
           <LogOut size={18} /> <span className="hidden sm:inline">Logout</span>
         </button>
       </div>
@@ -581,6 +589,7 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'analytics' && <AnalyticsDashboard />}
+        {activeTab === 'performance' && <UserPerformance />}
       </main>
     </div>
   );

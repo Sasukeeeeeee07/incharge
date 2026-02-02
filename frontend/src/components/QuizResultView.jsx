@@ -40,9 +40,9 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-semibold text-center min-w-[90px] 
                     ${response?.answerType === 'In-Charge' 
-                      ? 'bg-blue-500/20 text-blue-400' 
+                      ? 'bg-orange-500/20 text-orange-400' 
                       : response?.answerType === 'In-Control'
-                      ? 'bg-orange-500/20 text-orange-400'
+                      ? 'bg-blue-500/20 text-blue-400'
                       : 'bg-white/10 text-text-secondary'
                     }`}>
                     {response?.answerType}

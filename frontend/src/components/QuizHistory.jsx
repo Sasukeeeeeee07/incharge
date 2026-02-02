@@ -37,8 +37,8 @@ const QuizHistory = ({ history, onSelectQuiz }) => {
                         )}
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter
-                        ${item.result === 'In-Charge' ? 'bg-blue-500/20 text-blue-400' : 
-                          item.result === 'In-Control' ? 'bg-orange-500/20 text-orange-400' : 
+                        ${item.result === 'In-Charge' ? 'bg-orange-500/20 text-orange-400' : 
+                          item.result === 'In-Control' ? 'bg-blue-500/20 text-blue-400' : 
                           'bg-white/10 text-text-secondary'}
                     `}>
                         {item.result}

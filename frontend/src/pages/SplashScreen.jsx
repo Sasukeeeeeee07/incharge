@@ -149,9 +149,9 @@ const SplashScreen = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.4, duration: 0.8 }}
             >
-              <span className="text-blue-400">In-Charge</span>
+              <span className="text-orange-400">In-Charge</span>
               <span className="text-white/40 mx-3 text-xl sm:text-2xl italic font-light">or</span>
-              <span className="text-orange-400">In-Control</span>
+              <span className="text-blue-400">In-Control</span>
             </motion.h1>
             <motion.div 
               className="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent rounded-full"

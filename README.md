@@ -13,6 +13,7 @@ The application consists of a polished user-facing quiz experience and a robust 
   - **Visual Feedback**: Real-time speedometer and ladder visualization for assessment progress.
 - **Admin Dashboard**:
   - **Analytics**: Comprehensive visual data using Recharts, including user growth, role distribution, and accuracy comparisons.
+  - **User Performance**: Dedicated tab for detailed user history, aggregate result calculation (based on frequency), and attempt breakdowns.
   - **User Management**: Bulk import/export users via CSV or Excel (XLSX).
   - **Quiz Management**: Create, edit, and schedule quizzes with multi-language capabilities.
   - **AI Generation**: Integrated AI capabilities to generate quiz drafts instantly.
@@ -93,6 +94,9 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:5173`. Make sure the backend is running on `http://localhost:5000` as the frontend is configured to communicate with this port.
+
+> [!NOTE]
+> If you change the backend port, remember to update the API URL in `frontend/src/config/apiConfig.js` to match your new port.
 
 ---
 
