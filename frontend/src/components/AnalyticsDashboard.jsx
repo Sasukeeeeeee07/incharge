@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config/apiConfig';
 import { 
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
-import { Users, CheckCircle, TrendingUp, AlertCircle, RefreshCw, Filter } from 'lucide-react';
+import { Users, CheckCircle, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
 
 const COLORS = ['#6366f1', '#a855f7', '#22c55e', '#94a3b8'];
 
 const AnalyticsDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // 'all', 'incharge', 'incontrol', 'mixed' (using 'all' as mixed/default)
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [userHistory, setUserHistory] = useState([]);
@@ -19,12 +19,11 @@ const AnalyticsDashboard = () => {
   const [selectedAttempt, setSelectedAttempt] = useState(null);
   const [attemptDetails, setAttemptDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:5000/api/admin/analytics?role=${filter}`, {
+      const res = await axios.get(`${API_BASE_URL}/admin/analytics?role=all`, {
         headers: { Authorization: token }
       });
       setData(res.data);
@@ -39,14 +38,14 @@ const AnalyticsDashboard = () => {
 
   useEffect(() => {
     fetchAnalytics();
-  }, [filter]);
+  }, []);
 
   const fetchUserHistory = async (user) => {
     setSelectedUser(user);
     setLoadingHistory(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:5000/api/admin/users/${user.id}/history`, {
+      const res = await axios.get(`${API_BASE_URL}/admin/users/${user.id}/history`, {
         headers: { Authorization: token }
       });
       setUserHistory(res.data);
@@ -63,7 +62,7 @@ const AnalyticsDashboard = () => {
     setSelectedAttempt(attemptId);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://localhost:5000/api/admin/attempts/${attemptId}/details`, {
+      const res = await axios.get(`${API_BASE_URL}/admin/attempts/${attemptId}/details`, {
         headers: { Authorization: token }
       });
       setAttemptDetails(res.data);
@@ -81,24 +80,11 @@ const AnalyticsDashboard = () => {
   return (
     <div className="flex flex-col gap-6">
       
-      {/* Header & Filters */}
+      {/* Header */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
         
         <div className="flex items-center gap-3">
-          <div className="glass-card px-4 py-2 flex items-center gap-3">
-            <Filter size={16} className="text-text-secondary" />
-            <select 
-              value={filter} 
-              onChange={(e) => setFilter(e.target.value)}
-              className="bg-transparent border-none text-text-primary outline-none cursor-pointer min-w-[120px] text-sm font-medium"
-            >
-              <option value="all" className="bg-bg-secondary">All Users</option>
-              <option value="incharge" className="bg-bg-secondary">In-Charge Only</option>
-              <option value="incontrol" className="bg-bg-secondary">In-Control Only</option>
-            </select>
-          </div>
-          
           <button 
             onClick={fetchAnalytics} 
             className="btn-primary px-3 py-2 text-sm" 
@@ -116,20 +102,22 @@ const AnalyticsDashboard = () => {
           icon={<Users size={24} color="#6366f1" />} 
         />
         <StatCard 
-          title="Total Score (In-Charge)" 
+          title="Total In-Charge" 
           value={data.stats.totalInChargeScore || '0'} 
           icon={<TrendingUp size={24} color="#22c55e" />} 
-          subtext={`Out of ${data.stats.totalQuestions || '0'}`}
+          subtext="Cumulative points"
         />
         <StatCard 
-          title="In-Charge Accuracy" 
-          value={`${data.stats.inChargeAccuracy?.toFixed(1)}%`} 
+          title="Total In-Control" 
+          value={data.stats.totalInControlScore || '0'} 
+          icon={<TrendingUp size={24} color="#f43f5e" />} 
+          subtext="Cumulative points"
+        />
+        <StatCard 
+          title="Total Points" 
+          value={data.stats.totalQuestions || '0'} 
           icon={<CheckCircle size={24} color="#a855f7" />} 
-        />
-        <StatCard 
-          title="In-Control Accuracy" 
-          value={`${data.stats.inControlAccuracy?.toFixed(1)}%`} 
-          icon={<CheckCircle size={24} color="#f43f5e" />} 
+          subtext="Across all attempts"
         />
       </div>
 
@@ -254,10 +242,7 @@ const AnalyticsDashboard = () => {
                   <div className="text-text-secondary text-[11px] uppercase font-semibold">Score</div>
                   <div className="text-text-primary font-medium">{user.score}</div>
                 </div>
-                <div>
-                  <div className="text-text-secondary text-[11px] uppercase font-semibold">Accuracy</div>
-                  <div className="text-text-primary font-medium">{user.accuracy}</div>
-                </div>
+
                 <div className="col-span-2">
                   <div className="text-text-secondary text-[11px] uppercase font-semibold">Last Quiz</div>
                   <div className="text-text-primary font-medium">
@@ -278,7 +263,7 @@ const AnalyticsDashboard = () => {
                 <th className="p-4 font-semibold">Email</th>
                 <th className="p-4 font-semibold">Score (Charge/Control)</th>
                 <th className="p-4 font-semibold">Result</th>
-                <th className="p-4 font-semibold">Accuracy</th>
+
                 <th className="p-4 font-semibold">Last Quiz</th>
               </tr>
             </thead>
@@ -301,7 +286,7 @@ const AnalyticsDashboard = () => {
                       {user.result || 'N/A'}
                     </span>
                   </td>
-                  <td className="p-4">{user.accuracy}</td>
+
                   <td className="p-4 text-text-secondary">
                     {user.lastQuizDate !== '-' ? new Date(user.lastQuizDate).toLocaleDateString() : '-'}
                   </td>

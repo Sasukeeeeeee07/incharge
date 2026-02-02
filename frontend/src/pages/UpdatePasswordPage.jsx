@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/apiConfig';
 import { Lock, ShieldCheck } from 'lucide-react';
 
 const UpdatePasswordPage = () => {
@@ -32,7 +33,7 @@ const UpdatePasswordPage = () => {
 
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/auth/update-password', { newPassword });
+      await axios.post(`${API_BASE_URL}/auth/update-password`, { newPassword });
       const updatedUser = { ...user, firstLoginRequired: false };
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -51,12 +52,6 @@ const UpdatePasswordPage = () => {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-secondary/20 rounded-full blur-[120px] animate-float2" />
 
       <div className="glass-card w-full max-w-md p-8 sm:p-10 relative z-10 shadow-2xl">
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-accent-primary/10 rounded-2xl flex items-center justify-center text-accent-primary">
-            <ShieldCheck size={32} />
-          </div>
-        </div>
-
         <h2 className="text-3xl font-bold text-center text-white mb-2">Security Update</h2>
         <p className="text-text-secondary text-center mb-8">
           {user?.firstLoginRequired 

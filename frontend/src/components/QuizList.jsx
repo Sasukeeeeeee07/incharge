@@ -1,13 +1,14 @@
 import React from 'react';
 import { Edit, CheckCircle, Play, Trash2 } from 'lucide-react';
 import axios from 'axios';
+import API_BASE_URL from '../config/apiConfig';
 
 const QuizList = ({ quizzes, onEdit, onRefresh }) => {
 
   const handleApprove = async (id) => {
     if (!window.confirm('Are you sure you want to approve this quiz?')) return;
     try {
-      await axios.put(`http://localhost:5000/api/admin/quizzes/${id}/approve`);
+      await axios.put(`${API_BASE_URL}/admin/quizzes/${id}/approve`);
       onRefresh();
     } catch (err) {
       alert(err.response?.data?.error || 'Approval failed');
@@ -19,7 +20,7 @@ const QuizList = ({ quizzes, onEdit, onRefresh }) => {
     const dateStr = prompt(`Activate this quiz for which date? \nTo be visible to users on:`, defaultDate);
     if (!dateStr) return;
     try {
-      await axios.put(`http://localhost:5000/api/admin/quizzes/${quiz._id}/activate`, { activeDate: dateStr });
+      await axios.put(`${API_BASE_URL}/admin/quizzes/${quiz._id}/activate`, { activeDate: dateStr });
       onRefresh();
     } catch (err) {
       alert(err.response?.data?.error || 'Activation failed');
@@ -29,7 +30,7 @@ const QuizList = ({ quizzes, onEdit, onRefresh }) => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/admin/quizzes/${id}`);
+      await axios.delete(`${API_BASE_URL}/admin/quizzes/${id}`);
       onRefresh();
     } catch (err) {
       alert(err.response?.data?.error || 'Deletion failed');

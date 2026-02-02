@@ -7,8 +7,8 @@ const Speedometer = ({ currentStep, totalSteps }) => {
   const [needleSettled, setNeedleSettled] = useState(false);
 
   const getActiveSegment = () => {
-    if (normalizedValue < 0.33) return 'in-control';
-    if (normalizedValue > 0.67) return 'in-charge';
+    if (normalizedValue > 0.51) return 'in-charge';
+    if (normalizedValue < 0.49) return 'in-control';
     return 'balanced';
   };
 
@@ -100,17 +100,16 @@ const Speedometer = ({ currentStep, totalSteps }) => {
 
             {/* Active Segments with Intense Glow */}
             <motion.path 
-              d="M 30 120 A 90 90 0 0 1 55 55"
+              d="M 30 120 A 90 90 0 0 1 104.4 31.4"
               fill="none" 
               stroke="#f97316"
               strokeWidth="15"
               strokeLinecap="round"
               animate={{ 
-                strokeOpacity: activeSegment === 'in-control' ? [0.9, 1, 0.9] : 0.12,
+                strokeOpacity: activeSegment === 'in-control' ? [0.9, 1, 0.9] : 0.05,
                 strokeWidth: activeSegment === 'in-control' ? [15, 19, 15] : 15
               }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              filter={activeSegment === 'in-control' && needleSettled ? "url(#ultraGlow)" : "none"}
               style={{ 
                 filter: activeSegment === 'in-control' && needleSettled 
                   ? 'drop-shadow(0 0 25px #f97316) drop-shadow(0 0 40px #f97316)' 
@@ -119,17 +118,16 @@ const Speedometer = ({ currentStep, totalSteps }) => {
             />
 
             <motion.path 
-              d="M 55 55 A 90 90 0 0 1 185 55"
+              d="M 104.4 31.4 A 90 90 0 0 1 135.6 31.4"
               fill="none" 
               stroke="#94a3b8"
               strokeWidth="15"
               strokeLinecap="round"
               animate={{ 
-                strokeOpacity: activeSegment === 'balanced' ? [0.9, 1, 0.9] : 0.12,
+                strokeOpacity: activeSegment === 'balanced' ? [0.9, 1, 0.9] : 0.05,
                 strokeWidth: activeSegment === 'balanced' ? [15, 19, 15] : 15
               }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              filter={activeSegment === 'balanced' && needleSettled ? "url(#ultraGlow)" : "none"}
               style={{ 
                 filter: activeSegment === 'balanced' && needleSettled 
                   ? 'drop-shadow(0 0 25px #94a3b8) drop-shadow(0 0 40px #94a3b8)' 
@@ -138,17 +136,16 @@ const Speedometer = ({ currentStep, totalSteps }) => {
             />
 
             <motion.path 
-              d="M 185 55 A 90 90 0 0 1 210 120"
+              d="M 135.6 31.4 A 90 90 0 0 1 210 120"
               fill="none" 
               stroke="#3b82f6"
               strokeWidth="15"
               strokeLinecap="round"
               animate={{ 
-                strokeOpacity: activeSegment === 'in-charge' ? [0.9, 1, 0.9] : 0.12,
+                strokeOpacity: activeSegment === 'in-charge' ? [0.9, 1, 0.9] : 0.05,
                 strokeWidth: activeSegment === 'in-charge' ? [15, 19, 15] : 15
               }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              filter={activeSegment === 'in-charge' && needleSettled ? "url(#ultraGlow)" : "none"}
               style={{ 
                 filter: activeSegment === 'in-charge' && needleSettled 
                   ? 'drop-shadow(0 0 25px #3b82f6) drop-shadow(0 0 40px #3b82f6)' 

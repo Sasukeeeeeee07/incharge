@@ -126,7 +126,7 @@ const SplashScreen = () => {
           </motion.div>
         </motion.div>
 
-        {/* Brand Title */}
+        {/* Brand Title replaced with Logo */}
         <div className="text-center mb-8 sm:mb-10">
           <motion.div 
             className="relative inline-block mb-3 sm:mb-4"
@@ -138,42 +138,28 @@ const SplashScreen = () => {
               ease: "easeOut"
             }}
           >
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent drop-shadow-lg">
-              In-Charge
-            </h1>
+            <img 
+              src="/smmart_Logo.png" 
+              alt="Smmart Logo" 
+              className="w-full max-w-[300px] sm:max-w-[400px] md:max-w-[500px] mx-auto h-auto object-contain" 
+            />
+            <motion.h1 
+              className="text-2xl sm:text-4xl font-black mt-8 tracking-wider"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.4, duration: 0.8 }}
+            >
+              <span className="text-blue-400">In-Charge</span>
+              <span className="text-white/40 mx-3 text-xl sm:text-2xl italic font-light">or</span>
+              <span className="text-orange-400">In-Control</span>
+            </motion.h1>
             <motion.div 
-              className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent rounded-full"
+              className="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent rounded-full"
               initial={{ scaleX: 0, opacity: 0 }}
               animate={{ scaleX: 1, opacity: 0.8 }}
               transition={{ delay: 1.2, duration: 0.8 }}
             />
           </motion.div>
-          
-          <motion.h2 
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white/90 -tracking-tight mb-3 sm:mb-4"
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ 
-              delay: 1,
-              type: "spring",
-              stiffness: 150
-            }}
-          >
-            OR
-          </motion.h2>
-          
-          <motion.h1 
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent drop-shadow-lg"
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ 
-              delay: 1.2,
-              duration: 1,
-              ease: "easeOut"
-            }}
-          >
-            In-Control
-          </motion.h1>
           
           <motion.p 
             className="text-white/60 mt-6 sm:mt-8 text-base sm:text-lg md:text-xl leading-relaxed px-4"

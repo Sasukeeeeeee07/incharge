@@ -103,7 +103,7 @@ const getAnalytics = async (req, res) => {
 
     // C. Language Distribution (Bar Chart)
     const langCounts = {};
-    attempts.forEach(att => {
+    relevantAttempts.forEach(att => {
         const lang = att.language || 'english';
         langCounts[lang] = (langCounts[lang] || 0) + 1;
     });
@@ -140,6 +140,7 @@ const getAnalytics = async (req, res) => {
       stats: {
         totalUsers,
         totalInChargeScore,
+        totalInControlScore,
         totalQuestions,
         inChargeAccuracy,
         inControlAccuracy

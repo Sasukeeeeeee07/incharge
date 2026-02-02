@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config/apiConfig';
 import { Save, X, Trash2, Plus } from 'lucide-react';
 
 const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
@@ -196,9 +197,9 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
       };
 
       if (quiz) {
-        await axios.put(`http://localhost:5000/api/admin/quizzes/${quiz._id}`, payload);
+        await axios.put(`${API_BASE_URL}/admin/quizzes/${quiz._id}`, payload);
       } else {
-        await axios.post('http://localhost:5000/api/admin/quizzes', payload);
+        await axios.post(`${API_BASE_URL}/admin/quizzes`, payload);
       }
       onSave();
     } catch (err) {

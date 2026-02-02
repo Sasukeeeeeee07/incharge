@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Upload, Users, List, BarChart2, LogOut, Download, Menu, X, Plus, UserCircle } from 'lucide-react';
+import API_BASE_URL from '../config/apiConfig';
+import { Upload, Users, List, BarChart2, LogOut, Download, X, Plus, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import QuizList from '../components/QuizList';
@@ -17,9 +18,10 @@ const AdminDashboard = () => {
   const [importSummary, setImportSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userEditModalOpen, setUserEditModalOpen] = useState(false);
+  const [addUserModalOpen, setAddUserModalOpen] = useState(false);
+  const [newUsers, setNewUsers] = useState([{ name: '', email: '', mobile: '', company: '' }]);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -35,7 +37,7 @@ const AdminDashboard = () => {
 
   const fetchQuizzes = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/admin/quizzes');
+      const res = await axios.get(`${API_BASE_URL}/admin/quizzes`);
       setQuizzes(res.data);
     } catch (err) {
       console.error('Failed to fetch quizzes');
@@ -55,7 +57,7 @@ const AdminDashboard = () => {
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/admin/users/${selectedUser._id}`, selectedUser);
+      await axios.put(`${API_BASE_URL}/admin/users/${selectedUser._id}`, selectedUser);
       setUserEditModalOpen(false);
       fetchUsers();
     } catch (err) {
@@ -65,7 +67,7 @@ const AdminDashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/admin/users');
+      const res = await axios.get(`${API_BASE_URL}/admin/users`);
       setUsers(res.data);
     } catch (err) {
       console.error('Failed to fetch users');
@@ -81,7 +83,7 @@ const AdminDashboard = () => {
     formData.append('file', file);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/admin/import', formData);
+      const res = await axios.post(`${API_BASE_URL}/admin/import`, formData);
       setImportSummary(res.data);
       fetchUsers();
     } catch (err) {
@@ -93,7 +95,7 @@ const AdminDashboard = () => {
 
   const handleExport = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/admin/export', {
+      const res = await axios.get(`${API_BASE_URL}/admin/export`, {
         responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -108,104 +110,120 @@ const AdminDashboard = () => {
     }
   };
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const handleManualCreateUsers = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await axios.post(`${API_BASE_URL}/admin/users`, { users: newUsers });
+      setImportSummary(res.data);
+      setAddUserModalOpen(false);
+      setNewUsers([{ name: '', email: '', mobile: '', company: '' }]);
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to create users');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  return (
-    <div className="min-h-screen bg-bg-primary flex transition-all duration-300">
+  const addMoreUserSection = () => {
+    setNewUsers([...newUsers, { name: '', email: '', mobile: '', company: '' }]);
+  };
 
-      {/* Sidebar Overlay for Mobile */}
-      {isSidebarOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setIsSidebarOpen(false)}
+  const updateNewUserField = (index, field, value) => {
+    const updated = [...newUsers];
+    updated[index][field] = value;
+    setNewUsers(updated);
+  };
+
+  const removeUserSection = (index) => {
+    if (newUsers.length === 1) return;
+    setNewUsers(newUsers.filter((_, i) => i !== index));
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    
+    try {
+      await axios.delete(`${API_BASE_URL}/admin/users/${userId}`);
+      setUserEditModalOpen(false);
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete user');
+    }
+  };
+
+
+
+  const renderNavbar = () => (
+    <header className="px-4 md:px-10 py-3 md:py-5 flex justify-between items-center border-b border-blue-200/10 bg-blue-900/50 backdrop-blur-md sticky top-0 z-40">
+      <div 
+        className="cursor-pointer flex items-center" 
+        onClick={() => setActiveTab('analytics')}
+      >
+        <img 
+          src="/smmart_Logo.png" 
+          alt="Smmart Logo" 
+          className="h-8 md:h-12 w-auto object-contain transition-transform hover:scale-105" 
         />
-      )}
-
-      {/* Sidebar */}
-      <div className={`dashboard-sidebar ${isSidebarOpen ? 'open' : ''} h-screen fixed top-0 left-0 bottom-0 w-[250px] md:sticky md:block z-50 transition-transform duration-300 flex-shrink-0 flex flex-col`}>
-        <div className="flex justify-between items-center mb-10">
-          <h2 className="text-xl text-orange-500 font-bold mb-10">In-Charge OR In-Control</h2>
-          <X className="md:hidden cursor-pointer text-text-primary" onClick={() => setIsSidebarOpen(false)} />
-        </div>
-        
-        <div className="flex flex-col gap-3">
-
-          <SidebarItem 
-            icon={<BarChart2 size={20} />} 
-            label="Analytics" 
-            active={activeTab === 'analytics'} 
-            onClick={() => { setActiveTab('analytics'); setIsSidebarOpen(false); }} 
-          />
-          
-          <SidebarItem 
-            icon={<Users size={20} />} 
-            label="User Management" 
-            active={activeTab === 'users'} 
-            onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }} 
-          />
-          {/* Bulk Import Removed */}
-          <SidebarItem 
-            icon={<List size={20} />} 
-            label="Quiz Management" 
-            active={activeTab === 'quiz'} 
-            onClick={() => { setActiveTab('quiz'); setIsSidebarOpen(false); }} 
-          />
-        </div>
-
-        {/* Sidebar Footer (Profile & Logout) */}
-        <div className="mt-auto flex flex-col gap-3 pt-40 border-t border-white/[0.05]">
-          <SidebarItem 
-            icon={<UserCircle size={20} />} 
-            label="Profile" 
-            onClick={() => navigate('/profile')} 
-          />
-          <SidebarItem 
-            icon={<LogOut size={20} />} 
-            label="Logout" 
-            onClick={handleLogout} 
-            danger
-          />
-        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
-        {/* Top Header */}
-        <header className="px-5 md:px-10 py-5 flex justify-between items-center border-b border-glass-border bg-bg-secondary/50 backdrop-blur-md sticky top-0 z-40 md:hidden">
-          <div className="flex items-center gap-3 md:hidden">
-            <Menu onClick={toggleSidebar} className="cursor-pointer text-text-primary" />
-            <h2 className="text-xl text-accent-primary m-0">Admin</h2>
-          </div>
-          <div className="hidden md:block">
-            {/* Empty space or breadcrumbs can go here */}
-          </div>
-          <div className="flex items-center gap-5 ml-auto md:hidden">
-            <button 
-              onClick={() => navigate('/profile')} 
-              className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors"
-            >
-              <UserCircle size={18} /> <span className="hidden sm:inline">Profile</span>
-            </button>
-            <button 
-              onClick={handleLogout} 
-              className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors"
-            >
-              <LogOut size={18} /> <span className="hidden sm:inline">Logout</span>
-            </button>
-          </div>
-        </header>
+      <div className="flex items-center gap-2 md:gap-5 overflow-x-auto no-scrollbar mask-gradient pr-2">
+        <button 
+          onClick={() => setActiveTab('analytics')} 
+          className={`flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'analytics' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+        >
+          <BarChart2 size={18} /> <span className="hidden sm:inline">Analytics</span>
+        </button>
 
-        <div className="p-5 md:p-10 overflow-y-auto flex-1">
+        <button 
+          onClick={() => setActiveTab('users')} 
+          className={`flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'users' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+        >
+          <Users size={18} /> <span className="hidden sm:inline">Users</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveTab('quiz')} 
+          className={`flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'quiz' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+        >
+          <List size={18} /> <span className="hidden sm:inline">Quizzes</span>
+        </button>
+
+        <div className="w-px h-6 bg-white/10 mx-1 hidden sm:block"></div>
+
+        <button onClick={() => navigate('/profile')} className="flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5 whitespace-nowrap">
+          <UserCircle size={18} /> <span className="hidden sm:inline">Profile</span>
+        </button>
+        
+        <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5 whitespace-nowrap">
+          <LogOut size={18} /> <span className="hidden sm:inline">Logout</span>
+        </button>
+      </div>
+    </header>
+  );
+
+  return (
+    <div className="min-h-screen bg-bg-primary flex flex-col font-sans">
+      {renderNavbar()}
+
+      <main className="flex-1 p-4 md:p-8 lg:p-10 max-w-7xl mx-auto w-full">
         {activeTab === 'users' && (
           <div>
-          <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
-            <h1 className="text-3xl font-bold">Users</h1>
-            <div className="flex gap-3">
-              <button onClick={() => setImportModalOpen(true)} className="btn-secondary">
-                <Upload size={18} /> Import Users
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <h1 className="text-3xl font-bold">User Management</h1>
+            <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+              <button 
+                onClick={() => setAddUserModalOpen(true)} 
+                className="flex-1 sm:flex-none justify-center px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/20 active:scale-[0.98]"
+              >
+                <Plus size={18} /> Add User
               </button>
-              <button onClick={handleExport} className="btn-secondary">
-                <Download size={18} /> Export Users
+              <button onClick={() => setImportModalOpen(true)} className="btn-secondary flex-1 sm:flex-none justify-center">
+                <Upload size={18} /> Import
+              </button>
+              <button onClick={handleExport} className="btn-secondary flex-1 sm:flex-none justify-center">
+                <Download size={18} /> Export
               </button>
             </div>
           </div>
@@ -278,6 +296,119 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* Add User Modal */}
+        {addUserModalOpen && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-5">
+            <div className="glass-card w-full max-w-4xl p-6 sm:p-8 relative max-h-[90vh] flex flex-col">
+              <button 
+                onClick={() => setAddUserModalOpen(false)} 
+                className="absolute top-5 right-5 text-text-secondary hover:text-white z-10"
+              >
+                <X size={24} />
+              </button>
+              
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold">Add New Users</h2>
+                <p className="text-text-secondary text-sm mt-1">Manually enter user details below</p>
+              </div>
+
+              <form onSubmit={handleManualCreateUsers} className="flex-1 overflow-y-auto pr-2 space-y-8 custom-scrollbar mb-6">
+                {newUsers.map((user, index) => (
+                  <div key={index} className="relative p-6 rounded-2xl bg-white/[0.03] border border-white/10 group animate-in fade-in slide-in-from-top-4 duration-300">
+                    {newUsers.length > 1 && (
+                      <button 
+                        type="button" 
+                        onClick={() => removeUserSection(index)}
+                        className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] uppercase font-bold text-text-secondary px-1">Name</label>
+                        <input 
+                          type="text" 
+                          placeholder="John Doe"
+                          value={user.name} 
+                          onChange={(e) => updateNewUserField(index, 'name', e.target.value)}
+                          className="quiz-input text-sm py-2.5"
+                          required
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] uppercase font-bold text-text-secondary px-1">Email</label>
+                        <input 
+                          type="email" 
+                          placeholder="john@example.com"
+                          value={user.email} 
+                          onChange={(e) => updateNewUserField(index, 'email', e.target.value)}
+                          className="quiz-input text-sm py-2.5"
+                          required
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] uppercase font-bold text-text-secondary px-1">Mobile</label>
+                        <input 
+                          type="text" 
+                          placeholder="+1 234..."
+                          value={user.mobile} 
+                          onChange={(e) => updateNewUserField(index, 'mobile', e.target.value)}
+                          className="quiz-input text-sm py-2.5"
+                          required
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[11px] uppercase font-bold text-text-secondary px-1">Company</label>
+                        <input 
+                          type="text" 
+                          placeholder="Organization"
+                          value={user.company} 
+                          onChange={(e) => updateNewUserField(index, 'company', e.target.value)}
+                          className="quiz-input text-sm py-2.5"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <button 
+                  type="button" 
+                  onClick={addMoreUserSection}
+                  className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-text-secondary hover:text-white hover:border-white/20 hover:bg-white/5 transition-all font-bold flex items-center justify-center gap-2 group"
+                >
+                  <Plus size={20} className="group-hover:rotate-90 transition-transform" /> Add another user section
+                </button>
+              </form>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-white/10 bg-inherit mt-auto">
+                <button 
+                  type="button" 
+                  onClick={() => setAddUserModalOpen(false)} 
+                  className="btn-secondary flex-1 justify-center py-3"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  onClick={addMoreUserSection}
+                  className="flex-1 justify-center py-3 rounded-xl font-bold transition-all flex items-center gap-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 active:scale-[0.98]"
+                >
+                  Add more users
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-primary flex-1 justify-center py-3" 
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : 'Save All Users'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Import Modal */}
         {importModalOpen && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-5">
@@ -296,7 +427,7 @@ const AdminDashboard = () => {
                   type="file" 
                   accept=".csv, .xlsx" 
                   onChange={(e) => setFile(e.target.files[0])} 
-                  className="bg-transparent p-0 border-none"
+                  className="bg-transparent p-0 border-none w-full text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-accent-primary/10 file:text-accent-primary hover:file:bg-accent-primary/20"
                 />
                 <button type="submit" className="btn-primary justify-center" disabled={loading || !file}>
                   {loading ? 'Importing...' : 'Start Import'}
@@ -396,9 +527,16 @@ const AdminDashboard = () => {
                   <label htmlFor="accessFlag" className="font-medium cursor-pointer">Active Access (Enable/Disable User)</label>
                 </div>
 
-                <div className="flex gap-4 pt-4">
+                <div className="flex flex-wrap gap-4 pt-4">
                   <button type="button" onClick={() => setUserEditModalOpen(false)} className="btn-secondary flex-1 justify-center">
                     Cancel
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => handleDeleteUser(selectedUser._id)}
+                    className="flex-1 justify-center py-3 rounded-xl font-bold transition-all flex items-center gap-2 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 active:scale-[0.98]"
+                  >
+                    Delete User
                   </button>
                   <button type="submit" className="btn-primary flex-1 justify-center">
                     Save Changes
@@ -410,7 +548,7 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'quiz' && (
-           <div className="max-w-[1000px]">
+           <div className="w-full">
              <div className="flex justify-between items-center mb-8">
                <h1 className="text-3xl font-bold">Quiz Management</h1>
                {quizView === 'list' && (
@@ -443,24 +581,11 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'analytics' && <AnalyticsDashboard />}
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
 
-const SidebarItem = ({ icon, label, active, onClick, danger }) => (
-  <div 
-    onClick={onClick}
-    className={`
-      flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors duration-200
-      ${active ? 'bg-accent-primary/10 text-accent-primary' : 'hover:bg-white/5 text-text-secondary'}
-      ${danger ? 'text-error hover:text-red-400 hover:bg-red-500/10' : ''}
-    `}
-  >
-    {icon}
-    <span className="font-medium">{label}</span>
-  </div>
-);
+
 
 export default AdminDashboard;

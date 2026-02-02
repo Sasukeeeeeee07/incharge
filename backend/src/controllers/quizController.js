@@ -80,18 +80,12 @@ const submitQuiz = async (req, res) => {
       else if (resp.answerType === 'In-Control') inControl++;
     });
 
-    const totalQuestions = responses.length;
-    // Result logic aligned with Speedometer UI thresholds
-    // n = totalQuestions, starting step = n+1, total steps = 2n+1
-    // normalizedValue = (currentStep - 1) / (totalSteps - 1)
-    // where currentStep = (n + 1) + (inCharge - inControl)
-    const normalizedValue = (totalQuestions + inCharge - inControl) / (2 * totalQuestions);
-
+    // Simplified Majority Rule Logic
     let result = 'Balanced';
-    if (normalizedValue < 0.33) {
-      result = 'In-Control';
-    } else if (normalizedValue > 0.67) {
+    if (inCharge > inControl) {
       result = 'In-Charge';
+    } else if (inControl > inCharge) {
+      result = 'In-Control';
     }
 
     const attempt = await QuizAttempt.create({

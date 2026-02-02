@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config/apiConfig';
 import Ladder from '../components/Ladder';
 import QuizHistory from '../components/QuizHistory';
 import Speedometer from '../components/Speedometer';
@@ -100,8 +101,8 @@ const QuizPage = () => {
     try {
       // Parallel fetch today's quiz and history
       const [quizRes, historyRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/quiz/active').catch(err => ({ status: 404 })),
-        axios.get('http://localhost:5000/api/quiz/history').catch(err => ({ data: [] }))
+        axios.get(`${API_BASE_URL}/quiz/active`).catch(err => ({ status: 404 })),
+        axios.get(`${API_BASE_URL}/quiz/history`).catch(err => ({ data: [] }))
       ]);
 
       setHistory(historyRes.data || []);
@@ -143,7 +144,7 @@ const QuizPage = () => {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/quiz/history');
+      const res = await axios.get(`${API_BASE_URL}/quiz/history`);
       setHistory(res.data);
     } catch (err) {
       console.error('Failed to fetch history', err);
@@ -162,7 +163,12 @@ const QuizPage = () => {
 
   const handleAnswer = (answerType) => {
     const langKey = selectedLang?.toLowerCase();
-    const questions = quiz.content?.[langKey]?.questions || quiz.questions;
+    const questions = (quiz.content && langKey && quiz.content[langKey]) 
+        ? quiz.content[langKey].questions 
+        : (quiz.questions || []);
+    
+    if (questions.length === 0 || !questions[currentQuestionIndex]) return;
+
     const maxStep = 2 * questions.length + 1;
     const newResponses = [...responses, { 
       questionId: questions[currentQuestionIndex]._id, 
@@ -185,7 +191,7 @@ const QuizPage = () => {
 
   const submitQuiz = async (finalResponses) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/quiz/submit', {
+      const res = await axios.post(`${API_BASE_URL}/quiz/submit`, {
         quizId: quiz._id,
         responses: finalResponses,
         language: selectedLang
@@ -207,18 +213,19 @@ const QuizPage = () => {
 
   const renderNavbar = () => (
     <header className="px-4 md:px-10 py-3 md:py-5 flex justify-between items-center border-b border-blue-200/10 bg-blue-900/50 backdrop-blur-md sticky top-0 z-40">
-      <h2 
-  className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold uppercase tracking-widest cursor-pointer 
-              flex flex-col sm:flex-row md:flex-row items-center gap-0 sm:gap-1 md:gap-2" 
-  onClick={() => {
-    if (quiz) setView('take-quiz');
-    else setView('history');
-  }}
->
-  <span className="text-center leading-tight">In-Charge</span> 
-  <span className="px-0 sm:px-1 md:px-3 text-white text-center text-xs sm:text-sm md:text-base">OR</span> 
-  <span className="text-center leading-tight text-orange-500">In-Control</span>
-</h2>
+      <div 
+        className="cursor-pointer flex items-center" 
+        onClick={() => {
+          if (quiz) setView('take-quiz');
+          else setView('history');
+        }}
+      >
+        <img 
+          src="/smmart_Logo.png" 
+          alt="Smmart Logo" 
+          className="h-8 md:h-12 w-auto object-contain transition-transform hover:scale-105" 
+        />
+      </div>
 
 
       <div className="flex items-center gap-2 md:gap-5">
@@ -267,7 +274,7 @@ const QuizPage = () => {
   );
 
   // Language Selection Screen
-  if (view === 'quiz' && !selectedLang && quiz?.languages?.length > 1) {
+  if (view === 'quiz' && !selectedLang) {
     return (
       <div className="min-h-screen flex flex-col bg-bg-primary">
         {renderNavbar()}
@@ -320,20 +327,9 @@ const QuizPage = () => {
                     return;
                   }
                   
-                  if (quiz.languages && quiz.languages.length === 1) {
-                    const lang = quiz.languages[0];
-                    setSelectedLang(lang);
-                    const questions = quiz.content?.[lang]?.questions || quiz.questions || [];
-                    setCurrentStep(questions.length + 1);
-                    setView('quiz');
-                  } else if (!quiz.languages || quiz.languages.length === 0) {
-                    setSelectedLang('english');
-                    const questions = quiz.questions || [];
-                    setCurrentStep(questions.length + 1);
-                    setView('quiz');
-                  } else {
-                    setView('quiz'); // Will trigger language selection
-                  }
+                  // Always go to quiz view without pre-selecting language
+                  // This ensures the language selection screen is shown first
+                  setView('quiz');
                 }}
                 className="w-full md:max-w-[400px] glass-card p-8 cursor-pointer hover:border-blue-500/50 transition-all flex flex-col justify-between group relative overflow-hidden"
               >
@@ -429,7 +425,7 @@ const QuizPage = () => {
                 showDetails={showDetails}
                 setShowDetails={setShowDetails}
                 currentStep={currentStep}
-                totalSteps={2 * (quiz.content?.[selectedLang?.toLowerCase()]?.questions?.length || quiz.questions?.length || 0) + 1}
+                totalSteps={2 * ((quiz.content?.[selectedLang?.toLowerCase()]?.questions?.length || quiz.questions?.length || 0)) + 1}
             />
         )}
 
@@ -439,7 +435,7 @@ const QuizPage = () => {
                 <div className="w-full lg:hidden mb-4">
                   <Ladder 
                       currentStep={currentStep} 
-                      totalSteps={2 * (quiz.content?.[selectedLang?.toLowerCase()]?.questions?.length || quiz.questions?.length || 0) + 1}
+                      totalSteps={2 * ((quiz.content?.[selectedLang?.toLowerCase()]?.questions?.length || quiz.questions?.length || 0)) + 1}
                       orientation="horizontal"
                   />
                 </div>
@@ -449,8 +445,20 @@ const QuizPage = () => {
                         {/* ... existing question rendering ... */}
                         {(() => {
                             const langKey = selectedLang?.toLowerCase();
-                            const questions = quiz.content?.[langKey]?.questions || quiz.questions;
+                            const questions = (quiz.content && langKey && quiz.content[langKey]) 
+                                ? quiz.content[langKey].questions 
+                                : (quiz.questions || []);
                             const currentQuestion = questions[currentQuestionIndex];
+
+                            if (!currentQuestion) {
+                                return (
+                                    <div className="glass-card p-12 text-center w-full">
+                                        <p className="text-text-secondary mb-4">Questions could not be loaded. Please ensure a language is selected.</p>
+                                        <button onClick={() => { setView('quiz'); setSelectedLang(null); }} className="btn-secondary">Back to Language Selection</button>
+                                    </div>
+                                );
+                            }
+
                             return (
                                 <motion.div
                                     key={currentQuestionIndex}
@@ -487,7 +495,7 @@ const QuizPage = () => {
                     <div className="flex-1 w-full flex justify-center overflow-y-auto scrollbar-hide">
                         <Ladder 
                             currentStep={currentStep} 
-                            totalSteps={2 * (quiz.content?.[selectedLang?.toLowerCase()]?.questions?.length || quiz.questions?.length || 0) + 1}
+                            totalSteps={2 * ((quiz.content?.[selectedLang?.toLowerCase()]?.questions?.length || quiz.questions?.length || 0)) + 1}
                             orientation="vertical"
                         />
                     </div>

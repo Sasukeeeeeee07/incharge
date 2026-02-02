@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config/apiConfig';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Phone, Camera, Save, ArrowLeft, Loader2, Lock, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -33,7 +34,7 @@ const ProfilePage = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/user/profile', {
+      const res = await axios.get(`${API_BASE_URL}/user/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfile(res.data);
@@ -58,7 +59,7 @@ const ProfilePage = () => {
 
     try {
       setSaving(true);
-      const res = await axios.post('http://localhost:5000/api/user/profile/upload', formData, {
+      const res = await axios.post(`${API_BASE_URL}/user/profile/upload`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -78,7 +79,7 @@ const ProfilePage = () => {
     try {
       setSaving(true);
       setError('');
-      await axios.put('http://localhost:5000/api/user/profile', profile, {
+      await axios.put(`${API_BASE_URL}/user/profile`, profile, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Profile updated successfully');
@@ -106,7 +107,7 @@ const ProfilePage = () => {
     try {
       setResettingPassword(true);
       setPasswordError('');
-      await axios.put('http://localhost:5000/api/user/reset-password', {
+      await axios.put(`${API_BASE_URL}/user/reset-password`, {
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword
       }, {
@@ -150,7 +151,7 @@ const ProfilePage = () => {
               <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 rounded-full border-4 border-glass-border overflow-hidden bg-bg-secondary flex items-center justify-center">
                 {profile?.profileImage ? (
                   <img 
-                    src={`http://localhost:5000${profile.profileImage}`} 
+                    src={`${API_BASE_URL.replace('/api', '')}${profile.profileImage}`} 
                     alt="Profile" 
                     className="w-full h-full object-cover"
                   />

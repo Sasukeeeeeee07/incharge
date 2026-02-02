@@ -166,6 +166,56 @@ const exportUsers = async (req, res) => {
   }
 };
 
+const createUsers = async (req, res) => {
+  const { users } = req.body;
+  if (!users || !Array.isArray(users)) {
+    return res.status(400).json({ error: 'Valid users array required' });
+  }
+
+  const summary = { success: 0, failure: 0, duplicates: 0, updated: 0, details: [] };
+
+  try {
+    for (const userData of users) {
+      const { name, email, mobile, company } = userData;
+
+      if (!name || !email || !mobile) {
+        summary.failure++;
+        summary.details.push({ email: email || 'Unknown', error: 'Missing mandatory fields' });
+        continue;
+      }
+
+      const existingUser = await User.findOne({ email: email });
+      if (existingUser) {
+        summary.duplicates++;
+        summary.details.push({ email, error: 'User already exists' });
+        continue;
+      }
+
+      const tempPassword = generateTempPassword(name.toString(), mobile.toString());
+      
+      try {
+        await User.create({
+          name: name,
+          email: email,
+          mobile: mobile.toString(),
+          password: tempPassword,
+          company: company || '',
+          accessFlag: true,
+          firstLoginRequired: true
+        });
+        summary.success++;
+      } catch (err) {
+        summary.failure++;
+        summary.details.push({ email: email, error: err.message });
+      }
+    }
+
+    res.json(summary);
+  } catch (err) {
+    res.status(500).json({ error: 'Creation failed: ' + err.message });
+  }
+};
+
 const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -192,4 +242,24 @@ const updateUser = async (req, res) => {
   }
 };
 
-module.exports = { bulkImport, getUsers, exportUsers, updateUser };
+const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.role === 'admin') {
+      return res.status(403).json({ error: 'Admins cannot be deleted' });
+    }
+
+    await User.findByIdAndDelete(userId);
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+};
+
+module.exports = { bulkImport, getUsers, exportUsers, updateUser, createUsers, deleteUser };

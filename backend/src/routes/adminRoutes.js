@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { bulkImport, getUsers, exportUsers, updateUser } = require('../controllers/adminController');
+const { bulkImport, getUsers, exportUsers, updateUser, createUsers, deleteUser } = require('../controllers/adminController');
 const { 
   createQuiz, 
   updateQuiz, 
@@ -21,7 +21,9 @@ router.use(auth, admin);
 // User Management
 router.post('/import', upload.single('file'), bulkImport);
 router.get('/users', getUsers);
+router.post('/users', createUsers);
 router.put('/users/:userId', updateUser);
+router.delete('/users/:userId', deleteUser);
 router.get('/export', exportUsers);
 
 // Analytics
