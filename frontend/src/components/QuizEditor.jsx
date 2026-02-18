@@ -5,49 +5,65 @@ import { Save, X, Trash2, Plus } from 'lucide-react';
 
 const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
   const [formData, setFormData] = useState({
-    languages: ['english'],
+    languages: ['en'],
     content: {
-      english: { title: '', description: '', questions: [] }
+      en: { title: '', description: '', questions: [] }
     },
     activeDate: ''
   });
-  const [activeLang, setActiveLang] = useState('english');
+  const [activeLang, setActiveLang] = useState('en');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Updated to match database codes (ISO 639-1)
   const availableLanguages = [
-    { id: 'english', label: 'English' },
-    { id: 'hindi', label: 'Hindi' },
-    { id: 'gujarati', label: 'Gujarati' },
-    { id: 'malayalam', label: 'Malayalam' }
+    { id: 'en', label: 'English' },
+    { id: 'hi', label: 'Hindi' },
+    { id: 'gu', label: 'Gujarati' },
+    { id: 'ml', label: 'Malayalam' }
   ];
 
   useEffect(() => {
     if (quiz) {
       // Map-based content comes as an object in JS
-      const content = quiz.content || {
-        english: { 
-          title: quiz.title, 
-          description: quiz.description, 
-          questions: quiz.questions 
+      let content = quiz.content || {
+        en: {
+          title: quiz.title,
+          description: quiz.description,
+          questions: quiz.questions
         }
       };
-      const languages = quiz.languages || Object.keys(content);
-      
+
+      // MIGRATION HELPER: If 'english' exists but 'en' does not, remap it.
+      if (content.english && !content.en) {
+        content.en = content.english;
+        delete content.english;
+      }
+      // Also handle other legacy keys if necessary (hindi -> hi, etc.)
+      const legacyMap = { 'hindi': 'hi', 'gujarati': 'gu', 'malayalam': 'ml' };
+      Object.keys(legacyMap).forEach(legacyKey => {
+        if (content[legacyKey] && !content[legacyMap[legacyKey]]) {
+          content[legacyMap[legacyKey]] = content[legacyKey];
+          delete content[legacyKey];
+        }
+      });
+
+      const languages = Object.keys(content);
+
       setFormData({
         languages,
         content,
         activeDate: quiz.activeDate ? new Date(quiz.activeDate).toISOString().split('T')[0] : ''
       });
-      setActiveLang(languages[0] || 'english');
+      setActiveLang(languages[0] || 'en');
     } else {
       setFormData({
-        languages: ['english'],
+        languages: ['en'],
         content: {
-          english: { 
-            title: '', 
-            description: '', 
-            questions: Array.from({ length: 2 }, (_, i) => createEmptyQuestion(i)) 
+          en: {
+            title: '',
+            description: '',
+            questions: Array.from({ length: 2 }, (_, i) => createEmptyQuestion(i))
           }
         },
         activeDate: ''
@@ -58,23 +74,23 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
   const createEmptyQuestion = (index) => ({
     questionText: `Question ${index + 1}`,
     options: [
-      { text: '', type: 'In-Charge' },
-      { text: '', type: 'In-Control' },
-      { text: '', type: 'In-Control' },
-      { text: '', type: 'In-Control' }
+      { text: '', answerType: 'In-Charge' },
+      { text: '', answerType: 'In-Control' },
+      { text: '', answerType: 'In-Control' },
+      { text: '', answerType: 'In-Control' }
     ]
   });
 
   const handleAddLanguage = (langId) => {
     if (formData.languages.includes(langId)) return;
-    
+
     // Copy questions structure from English if it exists, otherwise empty
-    const templateQuestions = formData.content.english 
-      ? formData.content.english.questions.map(q => ({
-          ...q,
-          questionText: '',
-          options: q.options.map(o => ({ ...o, text: '' }))
-        }))
+    const templateQuestions = formData.content.en
+      ? formData.content.en.questions.map(q => ({
+        ...q,
+        questionText: '',
+        options: q.options.map(o => ({ ...o, text: '' }))
+      }))
       : Array.from({ length: 2 }, (_, i) => createEmptyQuestion(i));
 
     setFormData({
@@ -115,7 +131,7 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
   const handleAddQuestion = () => {
     if (readOnly) return;
     const updatedContent = { ...formData.content };
-    
+
     // Add question to ALL languages to keep them in sync
     formData.languages.forEach(lang => {
       updatedContent[lang].questions = [
@@ -133,7 +149,7 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
       alert("At least one question is required.");
       return;
     }
-    
+
     const updatedContent = { ...formData.content };
     formData.languages.forEach(lang => {
       updatedContent[lang].questions = updatedContent[lang].questions.filter((_, i) => i !== idx);
@@ -175,8 +191,8 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (readOnly) {
-        onCancel();
-        return;
+      onCancel();
+      return;
     }
     setError(null);
 
@@ -215,11 +231,11 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
     <div className="glass-card p-8 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <h2 className="text-2xl font-bold">{readOnly ? 'View Quiz' : (quiz ? 'Edit Quiz' : 'Create New Quiz')}</h2>
-        
+
         <div className="flex items-center gap-3">
           <div className="flex items-center bg-white/5 px-4 py-2 rounded-xl border border-white/10">
             <span className="text-xs font-bold text-text-secondary mr-3 tracking-wider">ACTIVE LANGUAGE:</span>
-            <select 
+            <select
               value={activeLang}
               onChange={(e) => setActiveLang(e.target.value)}
               className="bg-transparent text-sm font-bold text-orange-500 outline-none cursor-pointer focus:ring-0 mr-2"
@@ -241,10 +257,10 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
               </button>
             )}
           </div>
-          
+
           {!readOnly && (
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => {
                 const name = prompt("Enter language name (e.g. Hindi, Spanish):");
                 if (name && name.trim()) {
@@ -269,9 +285,9 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
         <fieldset disabled={readOnly} className="border-none p-0 m-0 disabled:opacity-80">
           <div className="mb-6">
             <label className="block text-sm font-medium text-text-secondary mb-2">Quiz Title ({activeLang})</label>
-            <input 
-              type="text" 
-              value={currentContent.title} 
+            <input
+              type="text"
+              value={currentContent.title}
               onChange={(e) => handleContentChange('title', e.target.value)}
               required
               disabled={readOnly}
@@ -282,8 +298,8 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
 
           <div className="mb-8">
             <label className="block text-sm font-medium text-text-secondary mb-2">Description ({activeLang})</label>
-            <textarea 
-              value={currentContent.description} 
+            <textarea
+              value={currentContent.description}
               onChange={(e) => handleContentChange('description', e.target.value)}
               rows="2"
               disabled={readOnly}
@@ -297,10 +313,10 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
             <div className="flex flex-col gap-4">
               <div>
                 <label className="block text-xs text-text-secondary mb-1">Active Date (Optional)</label>
-                <input 
-                  type="date" 
-                  value={formData.activeDate} 
-                  onChange={(e) => setFormData({...formData, activeDate: e.target.value})}
+                <input
+                  type="date"
+                  value={formData.activeDate}
+                  onChange={(e) => setFormData({ ...formData, activeDate: e.target.value })}
                   disabled={readOnly}
                   className="input-base max-w-xs"
                 />
@@ -319,8 +335,8 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
               <div key={qIdx} className="p-6 bg-white/[0.02] rounded-2xl border border-white/[0.08]">
                 <div className="flex gap-4 mb-4">
                   <span className="pt-3 font-bold text-orange-500">Q{qIdx + 1}.</span>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={q.questionText}
                     onChange={(e) => handleQuestionChange(qIdx, 'questionText', e.target.value)}
                     placeholder={`Enter question in ${availableLanguages.find(l => l.id === activeLang)?.label}...`}
@@ -329,8 +345,8 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
                     className="input-base flex-1"
                   />
                   {!readOnly && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => handleRemoveQuestion(qIdx)}
                       className="text-text-secondary hover:text-error transition-colors p-2"
                       title="Remove Question"
@@ -343,7 +359,7 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-0 sm:pl-10">
                   {q.options.map((opt, oIdx) => (
                     <div key={oIdx} className="flex flex-col gap-2">
-                      <input 
+                      <input
                         type="text"
                         value={opt.text}
                         onChange={(e) => handleOptionChange(qIdx, oIdx, 'text', e.target.value)}
@@ -352,9 +368,9 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
                         disabled={readOnly}
                         className="input-base text-sm"
                       />
-                      <select 
-                        value={opt.type}
-                        onChange={(e) => handleOptionChange(qIdx, oIdx, 'type', e.target.value)}
+                      <select
+                        value={opt.answerType}
+                        onChange={(e) => handleOptionChange(qIdx, oIdx, 'answerType', e.target.value)}
                         disabled={readOnly}
                         className="input-base text-xs py-2 h-auto cursor-pointer focus:ring-1 focus:ring-accent-primary"
                       >
@@ -369,8 +385,8 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
           </div>
 
           {!readOnly && (
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={handleAddQuestion}
               className="btn-secondary w-full mt-6 py-4 border-dashed border-2 border-white/10 hover:border-orange-500/50 text-orange-500 flex justify-center items-center gap-2"
             >
@@ -381,17 +397,17 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
         </fieldset>
 
         <div className="mt-8 flex gap-4 justify-end">
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={onCancel}
             className="px-6 py-2.5 rounded-xl border border-text-secondary/30 text-text-secondary hover:text-white hover:bg-white/5 transition-colors"
           >
             {readOnly ? 'Close' : 'Cancel'}
           </button>
-          
+
           {!readOnly && (
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="btn-primary"
             >

@@ -6,49 +6,55 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Check if user is logged in
   useEffect(() => {
-    if (token) {
-      try {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-        }
-      } catch (err) {
-        console.error('Auth initialization failed:', err);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
-      }
-    }
-    setLoading(false);
-  }, [token]);
+    checkAuth();
+  }, []);
 
-  const login = async (email, password) => {
-    const res = await axios.post(`${API_BASE_URL}/auth/login`, { email, password });
-    const { token: newToken, user: newUser } = res.data;
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
-    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    return newUser;
+  const checkAuth = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+        withCredentials: true, // Important for cookies
+      });
+      setUser(response.data.user);
+    } catch (err) {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    delete axios.defaults.headers.common['Authorization'];
+  const login = async (credentials) => {
+    try {
+      setError(null);
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials, {
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true
+      });
+      setUser(response.data.user);
+      return { success: true, user: response.data.user };
+    } catch (err) {
+      console.error("Login Error:", err);
+      const sendErr = err.response?.data?.message || 'Login failed';
+      setError(sendErr);
+      return { success: false, message: sendErr };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/auth/logout`, {}, { withCredentials: true });
+      setUser(null);
+    } catch (err) {
+      console.error('Logout failed', err);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, loading, error, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

@@ -9,21 +9,21 @@ const router = express.Router();
 // Multer setup for profile image upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, '/tmp/keval-uploads/');
   },
   filename: (req, file, cb) => {
     cb(null, `profile-${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png|webp/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     }

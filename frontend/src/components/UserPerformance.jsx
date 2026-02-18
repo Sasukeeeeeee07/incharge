@@ -4,6 +4,8 @@ import API_BASE_URL from '../config/apiConfig';
 import { RefreshCw, AlertCircle, ChevronLeft } from 'lucide-react';
 
 const UserPerformance = () => {
+  // Debug log to ensure fresh load
+  useEffect(() => { console.log('UserPerformance loaded'); }, []);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -14,13 +16,28 @@ const UserPerformance = () => {
   const [attemptDetails, setAttemptDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
+  // Filters
+  const [filters, setFilters] = useState({
+    search: '',
+    startDate: '',
+    endDate: '',
+    language: 'all',
+    onlyAttempted: true,
+  });
+
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_BASE_URL}/admin/analytics?role=all`, {
-        headers: { Authorization: token }
+      const params = new URLSearchParams({
+        role: 'all',
+        search: filters.search,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        language: filters.language,
+        onlyAttempted: filters.onlyAttempted
       });
+
+      const res = await axios.get(`${API_BASE_URL}/admin/analytics?${params.toString()}`);
       setData(res.data);
       setError('');
     } catch (err) {
@@ -33,16 +50,33 @@ const UserPerformance = () => {
 
   useEffect(() => {
     fetchAnalytics();
-  }, []);
+  }, [filters.onlyAttempted, filters.language]); // Auto-refresh on simple toggles, others via Apply or Enter
+
+  const handleFilterChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      startDate: '',
+      endDate: '',
+      language: 'all',
+      onlyAttempted: true,
+    });
+    // Trigger fetch in next effect or manually
+    setTimeout(fetchAnalytics, 0);
+  };
 
   const fetchUserHistory = async (user) => {
     setSelectedUser(user);
     setLoadingHistory(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_BASE_URL}/admin/users/${user.id}/history`, {
-        headers: { Authorization: token }
-      });
+      const res = await axios.get(`${API_BASE_URL}/admin/users/${user.id}/history`);
       setUserHistory(res.data);
     } catch (err) {
       console.error(err);
@@ -56,10 +90,7 @@ const UserPerformance = () => {
     setLoadingDetails(true);
     setSelectedAttempt(attemptId);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_BASE_URL}/admin/attempts/${attemptId}/details`, {
-        headers: { Authorization: token }
-      });
+      const res = await axios.get(`${API_BASE_URL}/admin/attempts/${attemptId}/details`);
       setAttemptDetails(res.data);
     } catch (err) {
       console.error(err);
@@ -74,16 +105,93 @@ const UserPerformance = () => {
 
   return (
     <div className="flex flex-col gap-6">
-       
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center gap-4">
-        <h2 className="text-2xl font-bold">User Performance</h2>
-        <button 
-          onClick={fetchAnalytics} 
-          className="btn-primary px-3 py-2 text-sm" 
-        >
-          <RefreshCw size={16} /> Refresh
-        </button>
+
+      {/* Header & Filters */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap justify-between items-center gap-4">
+          <h2 className="text-2xl font-bold">User Performance</h2>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="glass-card p-4 flex flex-col lg:flex-row gap-4 items-end lg:items-center justify-between">
+          <div className="flex flex-col md:flex-row gap-4 w-full">
+            {/* Search */}
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-xs uppercase font-bold text-text-secondary">Search User</label>
+              <input
+                type="text"
+                name="search"
+                placeholder="Name or Email..."
+                value={filters.search}
+                onChange={handleFilterChange}
+                onKeyDown={(e) => e.key === 'Enter' && fetchAnalytics()}
+                className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent-primary w-full"
+              />
+            </div>
+
+            {/* Date Range */}
+            <div className="flex gap-2 flex-1">
+              <div className="flex flex-col gap-1 w-full">
+                <label className="text-xs uppercase font-bold text-text-secondary">Start Date</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={filters.startDate}
+                  onChange={handleFilterChange}
+                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent-primary w-full text-white"
+                />
+              </div>
+              <div className="flex flex-col gap-1 w-full">
+                <label className="text-xs uppercase font-bold text-text-secondary">End Date</label>
+                <input
+                  type="date"
+                  name="endDate"
+                  value={filters.endDate}
+                  onChange={handleFilterChange}
+                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent-primary w-full text-white"
+                />
+              </div>
+            </div>
+
+            {/* Language */}
+            <div className="flex flex-col gap-1 w-full md:w-40">
+              <label className="text-xs uppercase font-bold text-text-secondary">Language</label>
+              <select
+                name="language"
+                value={filters.language}
+                onChange={handleFilterChange}
+                className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent-primary w-full text-white"
+              >
+                <option value="all" className="text-black">All Languages</option>
+                <option value="english" className="text-black">English</option>
+                <option value="hindi" className="text-black">Hindi</option>
+                <option value="gujarati" className="text-black">Gujarati</option>
+                <option value="malayalam" className="text-black">Malayalam</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full lg:w-auto mt-2 lg:mt-5">
+            <div className="flex items-center gap-2 mr-2">
+              <input
+                type="checkbox"
+                id="onlyAttempted"
+                name="onlyAttempted"
+                checked={filters.onlyAttempted}
+                onChange={handleFilterChange}
+                className="w-4 h-4 rounded accent-accent-primary cursor-pointer"
+              />
+              <label htmlFor="onlyAttempted" className="text-sm cursor-pointer whitespace-nowrap">Attempted Only</label>
+            </div>
+
+            <div className="flex gap-2 ml-auto">
+              <button onClick={clearFilters} className="btn-secondary text-sm py-2 px-3">Clear</button>
+              <button onClick={fetchAnalytics} className="btn-primary text-sm py-2 px-4">
+                <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Apply
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Data Table */}
@@ -91,8 +199,8 @@ const UserPerformance = () => {
         {/* Mobile View: Cards */}
         <div className="md:hidden divide-y divide-white/[0.05]">
           {data?.usersTable?.map((user) => (
-            <div 
-              key={user.id} 
+            <div
+              key={user.id}
               className="p-4 space-y-3 active:bg-white/[0.05] cursor-pointer"
               onClick={() => fetchUserHistory(user)}
             >
@@ -101,15 +209,14 @@ const UserPerformance = () => {
                   <div className="font-bold text-text-primary">{user.name}</div>
                   <div className="text-xs text-text-secondary">{user.email}</div>
                 </div>
-                <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                  user.result === 'In-Charge' ? 'bg-orange-500/20 text-orange-400' : 
-                  user.result === 'In-Control' ? 'bg-blue-500/20 text-blue-400' : 
-                  'bg-slate-500/20 text-slate-400'
-                }`}>
+                <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${user.result === 'In-Charge' ? 'bg-orange-500/20 text-orange-400' :
+                  user.result === 'In-Control' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-slate-500/20 text-slate-400'
+                  }`}>
                   {user.result || 'N/A'}
                 </span>
               </div>
-              
+
               <div className="text-sm mt-2">
                 <div>
                   <div className="text-text-secondary text-[11px] uppercase font-semibold">Last Quiz</div>
@@ -135,19 +242,18 @@ const UserPerformance = () => {
             </thead>
             <tbody>
               {data?.usersTable?.map((user) => (
-                <tr 
-                  key={user.id} 
+                <tr
+                  key={user.id}
                   className="border-b border-white/[0.05] hover:bg-white/[0.02] transition-colors cursor-pointer"
                   onClick={() => fetchUserHistory(user)}
                 >
                   <td className="p-4 font-medium">{user.name}</td>
                   <td className="p-4 text-text-secondary">{user.email}</td>
                   <td className="p-4">
-                    <span className={`px-2.5 py-1 rounded text-xs font-semibold ${
-                      user.result === 'In-Charge' ? 'bg-orange-500/20 text-orange-400' : 
-                      user.result === 'In-Control' ? 'bg-blue-500/20 text-blue-400' : 
-                      'bg-slate-500/20 text-slate-400'
-                    }`}>
+                    <span className={`px-2.5 py-1 rounded text-xs font-semibold ${user.result === 'In-Charge' ? 'bg-orange-500/20 text-orange-400' :
+                      user.result === 'In-Control' ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-slate-500/20 text-slate-400'
+                      }`}>
                       {user.result || 'N/A'}
                     </span>
                   </td>
@@ -170,14 +276,14 @@ const UserPerformance = () => {
                 <h3 className="text-xl font-bold">Quiz History</h3>
                 <p className="text-sm text-text-secondary">{selectedUser.name} ({selectedUser.email})</p>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedUser(null)}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors font-bold text-xl"
               >
                 ✕
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6">
               {loadingHistory ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-text-secondary">
@@ -187,8 +293,8 @@ const UserPerformance = () => {
               ) : userHistory.length > 0 ? (
                 <div className="space-y-4">
                   {userHistory.map((attempt) => (
-                    <div 
-                      key={attempt.id} 
+                    <div
+                      key={attempt.id}
                       className="bg-white/[0.03] border border-white/[0.05] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-white/[0.06] transition-all group"
                       onClick={() => fetchAttemptDetails(attempt.id)}
                     >
@@ -205,11 +311,10 @@ const UserPerformance = () => {
                           <div className="text-xs text-text-secondary uppercase font-bold tracking-wider mb-0.5">Score</div>
                           <div className="font-mono text-lg">{attempt.score.inCharge}/{attempt.score.inControl}</div>
                         </div>
-                        <div className={`px-4 py-1.5 rounded-lg text-sm font-bold shadow-lg ${
-                          attempt.result === 'In-Charge' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/20' : 
-                          attempt.result === 'In-Control' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/20' : 
-                          'bg-slate-500/20 text-slate-400 border border-slate-500/20'
-                        }`}>
+                        <div className={`px-4 py-1.5 rounded-lg text-sm font-bold shadow-lg ${attempt.result === 'In-Charge' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/20' :
+                          attempt.result === 'In-Control' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/20' :
+                            'bg-slate-500/20 text-slate-400 border border-slate-500/20'
+                          }`}>
                           {attempt.result}
                         </div>
                       </div>
@@ -233,7 +338,7 @@ const UserPerformance = () => {
           <div className="glass-card w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border-white/[0.15]">
             <div className="p-6 border-b border-white/[0.08] flex justify-between items-center bg-white/[0.03]">
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   onClick={() => { setSelectedAttempt(null); setAttemptDetails(null); }}
                   className="p-2 hover:bg-white/10 rounded-full transition-colors text-text-secondary hover:text-text-primary"
                 >
@@ -246,14 +351,14 @@ const UserPerformance = () => {
                   </p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => { setSelectedAttempt(null); setAttemptDetails(null); setSelectedUser(null); }}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors font-bold text-xl"
               >
                 ✕
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {loadingDetails ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3 text-text-secondary">
@@ -266,10 +371,9 @@ const UserPerformance = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                     <div className="bg-white/[0.05] p-4 rounded-2xl border border-white/[0.05]">
                       <div className="text-[10px] uppercase font-bold text-text-secondary tracking-widest mb-1">Result</div>
-                      <div className={`text-lg font-bold ${
-                        attemptDetails.result === 'In-Charge' ? 'text-orange-400' : 
+                      <div className={`text-lg font-bold ${attemptDetails.result === 'In-Charge' ? 'text-orange-400' :
                         attemptDetails.result === 'In-Control' ? 'text-blue-400' : 'text-slate-400'
-                      }`}>{attemptDetails.result}</div>
+                        }`}>{attemptDetails.result}</div>
                     </div>
                     <div className="bg-white/[0.05] p-4 rounded-2xl border border-white/[0.05]">
                       <div className="text-[10px] uppercase font-bold text-text-secondary tracking-widest mb-1">In-Charge Score</div>
@@ -293,16 +397,14 @@ const UserPerformance = () => {
                             <h4 className="text-text-primary font-medium leading-relaxed mb-3">{item.questionText}</h4>
                             <div className="flex flex-wrap items-center gap-3">
                               <span className="text-xs text-text-secondary">Selected:</span>
-                              <div className={`px-3 py-1.5 rounded-lg text-sm font-semibold border ${
-                                item.answerType === 'In-Charge' ? 'bg-orange-500/10 border-orange-500/20 text-orange-300' : 
+                              <div className={`px-3 py-1.5 rounded-lg text-sm font-semibold border ${item.answerType === 'In-Charge' ? 'bg-orange-500/10 border-orange-500/20 text-orange-300' :
                                 'bg-blue-500/10 border-blue-500/20 text-blue-300'
-                              }`}>
+                                }`}>
                                 {item.selectedAnswer}
                               </div>
-                              <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${
-                                item.answerType === 'In-Charge' ? 'text-orange-500/60 border-orange-500/20' : 
+                              <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${item.answerType === 'In-Charge' ? 'text-orange-500/60 border-orange-500/20' :
                                 'text-blue-500/60 border-blue-500/20'
-                              }`}>
+                                }`}>
                                 {item.answerType}
                               </span>
                             </div>

@@ -4,60 +4,77 @@ const QuizAttempt = require('../models/QuizAttempt');
 // Get active quiz for today
 const getActiveQuiz = async (req, res) => {
   try {
-    // Get start of today in UTC
     const now = new Date();
-    const datePart = now.toISOString().split('T')[0]; // Current UTC date YYYY-MM-DD
+    const datePart = now.toISOString().split('T')[0];
     const startOfToday = new Date(`${datePart}T00:00:00.000Z`);
     const endOfToday = new Date(startOfToday);
     endOfToday.setDate(endOfToday.getDate() + 1);
 
-    const quiz = await Quiz.findOne({ 
-      status: 'ACTIVE', 
-      activeDate: { $gte: startOfToday, $lt: endOfToday } 
-    });
+    console.log('Debug Active Quiz: Looking for quiz between', startOfToday, 'and', endOfToday);
+
+    // Relaxed logic: Get the LATEST active quiz that is active on or before today
+    // This allows a quiz activated "Yesterday" to still show up if no new one is set for today.
+    // However, it prevents "Tomorrow's" quiz from showing up early.
+
+    const quiz = await Quiz.findOne({
+      status: 'ACTIVE',
+      activeDate: { $lte: endOfToday }
+    }).sort({ activeDate: -1 }); // Get the most recent one
 
     if (!quiz) {
-      return res.status(404).json({ error: 'No active quiz for today' });
+      console.log('Debug Active Quiz: No active quiz found on or before today.');
+      return res.status(404).json({ error: 'No active quiz' });
     }
 
-    // Check if user already attempted
+    console.log('Debug Active Quiz: Found quiz:', quiz.title);
+
     const attempt = await QuizAttempt.findOne({ userId: req.user.id, quizId: quiz._id });
-    
-    // Convert to JSON and flatten maps for easy manipulation and response
-    const quizJson = quiz.toJSON({ flattenMaps: true });
+    const quizJson = quiz.toJSON({ flattenMaps: true }); // Ensure content map is converted
 
-    // Helper to shuffle options
-    const shuffleOptions = (questions) => {
-      if (!questions || !Array.isArray(questions)) return;
-      questions.forEach(q => {
-        if (!q.options) return;
-        for (let i = q.options.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [q.options[i], q.options[j]] = [q.options[j], q.options[i]];
-        }
-      });
-    };
+    const isCompleted = attempt && attempt.status === 'completed';
 
-    // Shuffle top-level questions (Legacy)
-    if (quizJson.questions) shuffleOptions(quizJson.questions);
-
-    // Shuffle multi-language content
-    if (quizJson.content) {
-      Object.keys(quizJson.content).forEach(lang => {
-        if (quizJson.content[lang] && quizJson.content[lang].questions) {
-          shuffleOptions(quizJson.content[lang].questions);
-        }
-      });
-    }
-
-    // Return quiz and attempt data
     res.json({
       quiz: quizJson,
-      alreadyAttempted: !!attempt,
+      alreadyAttempted: isCompleted,
       attempt: attempt || null
     });
   } catch (err) {
+    console.error('Error fetching quiz:', err);
     res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// Save in-progress quiz state
+const saveProgress = async (req, res) => {
+  const { quizId, responses, currentStep, currentQuestionIndex, language } = req.body;
+  try {
+    let attempt = await QuizAttempt.findOne({ userId: req.user.id, quizId });
+
+    if (!attempt) {
+      attempt = new QuizAttempt({
+        userId: req.user.id,
+        quizId,
+        responses,
+        // currentStep, (Legacy removed)
+        currentQuestionIndex,
+        language: language || 'english',
+        status: 'started'
+      });
+    } else {
+      if (attempt.status === 'completed') {
+        return res.status(403).json({ error: 'Quiz already completed' });
+      }
+      attempt.responses = responses;
+      // attempt.currentStep = currentStep; (Legacy removed)
+      attempt.currentQuestionIndex = currentQuestionIndex;
+      attempt.language = language || attempt.language;
+    }
+
+    await attempt.save();
+    res.json(attempt);
+  } catch (err) {
+    console.error('Save progress error:', err);
+    res.status(500).json({ error: 'Failed to save progress', details: err.message });
   }
 };
 
@@ -65,22 +82,53 @@ const getActiveQuiz = async (req, res) => {
 const submitQuiz = async (req, res) => {
   const { quizId, responses, language } = req.body;
   try {
-    const quiz = await Quiz.findById(quizId);
-    if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
+    console.log('DEBUG: submitQuiz called');
+    console.log('DEBUG: User ID:', req.user.id);
+    console.log('DEBUG: Payload Responses Count:', responses?.length);
 
-    // Enforce one attempt
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) {
+      console.error('DEBUG: Quiz not found:', quizId);
+      return res.status(404).json({ error: 'Quiz not found' });
+    }
+
+    // Check for existing completed attempt first (Read-only check)
     const existingAttempt = await QuizAttempt.findOne({ userId: req.user.id, quizId });
-    if (existingAttempt) return res.status(403).json({ error: 'Already attempted' });
+    if (existingAttempt && existingAttempt.status === 'completed') {
+      console.log('DEBUG: User already attempted quiz');
+      return res.status(403).json({ error: 'Already attempted' });
+    }
 
     let inCharge = 0;
     let inControl = 0;
 
-    responses.forEach(resp => {
-      if (resp.answerType === 'In-Charge') inCharge++;
-      else if (resp.answerType === 'In-Control') inControl++;
+    // Normalize and Score
+    const normalizedResponses = [];
+
+    responses.forEach((resp, index) => {
+      const raw = (resp.answerType || '').toLowerCase().replace(/[^a-z]/g, ''); // Keep only letters
+      let type = null;
+
+      if (raw.includes('charge')) {
+        type = 'In-Charge';
+        inCharge++;
+      } else if (raw.includes('control')) {
+        type = 'In-Control';
+        inControl++;
+      } else {
+        console.warn(`DEBUG Response ${index}: Unrecognized answerType '${resp.answerType}'. Defaulting to 'In-Charge' for safety.`);
+        type = 'In-Charge'; // Fallback to prevent validation error preventing entire save
+        inCharge++; // Count it
+      }
+
+      normalizedResponses.push({
+        questionId: resp.questionId,
+        answerType: type
+      });
     });
 
-    // Simplified Majority Rule Logic
+    console.log(`DEBUG Scoring: Charge=${inCharge}, Control=${inControl}`);
+
     let result = 'Balanced';
     if (inCharge > inControl) {
       result = 'In-Charge';
@@ -88,22 +136,37 @@ const submitQuiz = async (req, res) => {
       result = 'In-Control';
     }
 
-    const attempt = await QuizAttempt.create({
-      userId: req.user.id,
-      quizId,
-      responses,
-      score: { inCharge, inControl },
-      result,
-      language: language || 'english'
-    });
+    console.log('DEBUG: Saving attempt...');
 
+    // Use findOneAndUpdate with upsert
+    const attempt = await QuizAttempt.findOneAndUpdate(
+      { userId: req.user.id, quizId },
+      {
+        $set: {
+          responses: normalizedResponses,
+          score: { inCharge, inControl },
+          result: result,
+          language: language || 'english',
+          status: 'completed',
+          completedAt: new Date()
+        }
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true }
+    );
+
+    console.log('DEBUG: Attempt saved successfully:', attempt._id);
     res.json(attempt);
   } catch (err) {
-    res.status(500).json({ error: 'Submission failed' });
+    console.error('SUBMISSION CRITICAL ERROR:', err);
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(val => val.message);
+      console.error('Validation Details:', messages);
+      return res.status(400).json({ error: 'Validation Error', details: messages });
+    }
+    res.status(500).json({ error: 'Submission failed', details: err.message });
   }
 };
 
-// Get all quiz attempts for the logged-in user
 const getQuizHistory = async (req, res) => {
   try {
     const history = await QuizAttempt.find({ userId: req.user.id })
@@ -111,11 +174,9 @@ const getQuizHistory = async (req, res) => {
       .sort({ completedAt: -1 });
 
     const formattedHistory = history.map(attempt => {
-      // Find the title from content Map or legacy title
       let quizTitle = 'Untitled Quiz';
       if (attempt.quizId) {
         if (attempt.quizId.content) {
-          // Just grab the first available language title
           const langKeys = Array.from(attempt.quizId.content.keys());
           if (langKeys.length > 0) {
             quizTitle = attempt.quizId.content.get(langKeys[0]).title;
@@ -134,7 +195,6 @@ const getQuizHistory = async (req, res) => {
         score: attempt.score,
         responses: attempt.responses,
         language: attempt.language,
-        // Include quiz questions for detailed view if needed
         quizContent: attempt.quizId?.content || null,
         quizQuestions: attempt.quizId?.questions || []
       };
@@ -147,4 +207,4 @@ const getQuizHistory = async (req, res) => {
   }
 };
 
-module.exports = { getActiveQuiz, submitQuiz, getQuizHistory };
+module.exports = { getActiveQuiz, submitQuiz, getQuizHistory, saveProgress };

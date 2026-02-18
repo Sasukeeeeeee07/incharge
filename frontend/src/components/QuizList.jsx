@@ -29,10 +29,22 @@ const QuizList = ({ quizzes, onEdit, onRefresh }) => {
     }
   };
 
+  const handleDeactivate = async (id) => {
+    if (!window.confirm('Are you sure you want to deactivate this quiz? Users will no longer be able to take it.')) return;
+    try {
+      await axios.put(`${API_BASE_URL}/admin/quizzes/${id}/deactivate`);
+      onRefresh();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Deactivation failed');
+    }
+  };
+
   const getStatusStyles = (status) => {
     switch (status) {
       case 'DRAFT': return 'bg-white/5 text-text-secondary border-text-secondary/50';
+      case 'APPROVED': return 'bg-blue-500/10 text-blue-400 border-blue-500/50';
       case 'ACTIVE': return 'bg-success/10 text-success border-success/50';
+      case 'INACTIVE': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/50';
       case 'ARCHIVED': return 'bg-error/10 text-error border-error/50';
       default: return 'bg-white/5 text-gray-400 border-gray-500/50';
     }
@@ -51,7 +63,7 @@ const QuizList = ({ quizzes, onEdit, onRefresh }) => {
                 {quiz.status}
               </span>
             </div>
-            
+
             {/* Meta Details */}
             <div className="grid grid-cols-2 gap-4 text-sm text-text-secondary">
               <div>
@@ -66,24 +78,33 @@ const QuizList = ({ quizzes, onEdit, onRefresh }) => {
 
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-white/[0.05]">
-              <button 
-                onClick={() => onEdit(quiz)} 
+              <button
+                onClick={() => onEdit(quiz)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-medium text-text-primary hover:bg-white/10 hover:border-white/20 transition-all"
               >
                 <Edit size={14} /> Edit
               </button>
-              
-              {(quiz.status === 'DRAFT' || quiz.status === 'APPROVED' || quiz.status === 'ACTIVE') && (
-                <button 
-                  onClick={() => handleActivate(quiz)} 
+
+              {(quiz.status === 'DRAFT' || quiz.status === 'APPROVED' || quiz.status === 'INACTIVE') && (
+                <button
+                  onClick={() => handleActivate(quiz)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-primary/10 border border-accent-primary/20 text-xs font-medium text-accent-primary hover:bg-accent-primary/20 transition-all"
                 >
                   <Play size={14} /> Activate
                 </button>
               )}
 
-              <button 
-                onClick={() => handleDelete(quiz._id)} 
+              {quiz.status === 'ACTIVE' && (
+                <button
+                  onClick={() => handleDeactivate(quiz._id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-xs font-medium text-yellow-500 hover:bg-yellow-500/20 transition-all"
+                >
+                  <span className="font-bold">||</span> Deactivate
+                </button>
+              )}
+
+              <button
+                onClick={() => handleDelete(quiz._id)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-error/10 border border-error/20 text-xs font-medium text-error hover:bg-error/20 transition-all ml-auto"
               >
                 <Trash2 size={14} /> Delete
@@ -123,29 +144,39 @@ const QuizList = ({ quizzes, onEdit, onRefresh }) => {
                   <span className="opacity-70">Manual</span>
                 </td>
                 <td className="p-4 text-text-secondary">
-                   {quiz.activeDate ? new Date(quiz.activeDate).toLocaleDateString() : '-'}
+                  {quiz.activeDate ? new Date(quiz.activeDate).toLocaleDateString() : '-'}
                 </td>
                 <td className="p-4">
                   <div className="flex gap-3">
                     <button onClick={() => onEdit(quiz)} title="Edit" className="text-text-primary hover:text-accent-primary transition-colors">
                       <Edit size={18} />
                     </button>
-                    
-                    <button 
-                      onClick={() => handleDelete(quiz._id)} 
-                      title="Delete" 
+
+                    <button
+                      onClick={() => handleDelete(quiz._id)}
+                      title="Delete"
                       className="text-text-secondary hover:text-error transition-colors"
                     >
                       <Trash2 size={18} />
                     </button>
 
-                    {(quiz.status === 'DRAFT' || quiz.status === 'APPROVED') && (
-                      <button 
-                        onClick={() => handleActivate(quiz)} 
+                    {(quiz.status === 'DRAFT' || quiz.status === 'APPROVED' || quiz.status === 'INACTIVE') && (
+                      <button
+                        onClick={() => handleActivate(quiz)}
                         title="Activate"
                         className="text-accent-primary hover:text-indigo-400 transition-colors"
                       >
                         <Play size={18} />
+                      </button>
+                    )}
+
+                    {quiz.status === 'ACTIVE' && (
+                      <button
+                        onClick={() => handleDeactivate(quiz._id)}
+                        title="Deactivate"
+                        className="text-yellow-500 hover:text-yellow-400 transition-colors font-bold"
+                      >
+                        ||
                       </button>
                     )}
                   </div>

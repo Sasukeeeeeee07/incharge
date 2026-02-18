@@ -10,17 +10,17 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
     <div className="flex-1 flex flex-col justify-center lg:justify-start items-center w-full py-2 lg:pt-6 min-h-0">
       <h1 className="text-4xl md:text-5xl font-bold mb-1 lg:mb-2 text-center">Result: {result.result}</h1>
       <p className="text-text-secondary mb-3 lg:mb-6 text-sm md:text-base text-center">Thank you for participating!</p>
-      
+
       {/* Toggle button - positioned right after thank you text */}
       {!hideToggle && (
-        <button 
+        <button
           onClick={() => setShowDetails(!showDetails)}
           className="btn-primary mb-4 lg:mb-8 text-xs py-2 px-4 whitespace-nowrap"
         >
           {showDetails ? 'Back to Result' : 'See Detailed Results'}
         </button>
       )}
- 
+
       {/* Conditional rendering: either speedometer OR detailed results */}
       <div className="w-full flex-1 flex flex-col items-center justify-center lg:justify-start">
         {showDetails ? (
@@ -28,7 +28,7 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
           <div className="glass-card w-full max-w-3xl max-h-[50vh] overflow-y-auto text-left p-0 shadow-lg">
             {questions.map((q, idx) => {
               const response = responses.find(r => r.questionId === q._id);
-              const selectedOption = q.options?.find(opt => opt.type === response?.answerType);
+              const selectedOption = q.options?.find(opt => opt.answerType === response?.answerType);
               return (
                 <div key={idx} className="p-4 border-b border-glass-border flex justify-between items-center gap-4 hover:bg-white/[0.02]">
                   <div className="flex-1">
@@ -39,11 +39,11 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
                     </p>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-semibold text-center min-w-[90px] 
-                    ${response?.answerType === 'In-Charge' 
-                      ? 'bg-orange-500/20 text-orange-400' 
+                    ${response?.answerType === 'In-Charge'
+                      ? 'bg-orange-500/20 text-orange-400'
                       : response?.answerType === 'In-Control'
-                      ? 'bg-blue-500/20 text-blue-400'
-                      : 'bg-white/10 text-text-secondary'
+                        ? 'bg-blue-500/20 text-blue-400'
+                        : 'bg-white/10 text-text-secondary'
                     }`}>
                     {response?.answerType}
                   </div>
@@ -53,8 +53,8 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
           </div>
         ) : (
           /* Speedometer view */
-          <div className="w-full max-w-lg h-auto flex flex-col items-center justify-center pb-4">
-            <Speedometer currentStep={currentStep} totalSteps={totalSteps} />
+          <div className="w-full max-w-4xl h-auto flex flex-col items-center justify-center pb-4">
+            <Speedometer result={result.result} score={result.score} />
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config/apiConfig';
@@ -11,6 +12,7 @@ const UpdatePasswordPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { user, setUser } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -22,24 +24,28 @@ const UpdatePasswordPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (newPassword.length < 6) {
       return setError('Password must be at least 6 characters long');
     }
-    
+
     if (newPassword !== confirmPassword) {
       return setError('Passwords do not match');
     }
 
     setLoading(true);
+    console.log('Debug: Attempting password update for user:', user?.id);
     try {
-      await axios.post(`${API_BASE_URL}/auth/update-password`, { newPassword });
+      const response = await axios.post(`${API_BASE_URL}/auth/update-password`, { newPassword }, {
+        withCredentials: true
+      });
+      console.log('Debug: Password update success', response.data);
       const updatedUser = { ...user, firstLoginRequired: false };
       setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
       navigate(user.role === 'admin' ? '/admin' : '/quiz');
     } catch (err) {
-      setError('Failed to update password. Please try again.');
+      console.error('Debug: Password update failed', err);
+      setError(err.response?.data?.error || err.message || 'Failed to update password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -52,39 +58,39 @@ const UpdatePasswordPage = () => {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-secondary/20 rounded-full blur-[120px] animate-float2" />
 
       <div className="glass-card w-full max-w-md p-8 sm:p-10 relative z-10 shadow-2xl">
-        <h2 className="text-3xl font-bold text-center text-white mb-2">Security Update</h2>
+        <h2 className="text-3xl font-bold text-center text-white mb-2">{t('security_update', 'Security Update')}</h2>
         <p className="text-text-secondary text-center mb-8">
-          {user?.firstLoginRequired 
-            ? "Since this is your first login, you must update your password for security." 
-            : "Update your account password below."}
+          {user?.firstLoginRequired
+            ? t('first_login_msg', "Since this is your first login, you must update your password for security.")
+            : t('update_password_msg', "Update your account password below.")}
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-text-secondary ml-1">New Password</label>
+            <label className="text-sm font-medium text-text-secondary ml-1">{t('new_password', 'New Password')}</label>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent-primary transition-colors" size={18} />
-              <input 
-                type="password" 
-                placeholder="Enter new password" 
-                value={newPassword} 
-                onChange={(e) => setNewPassword(e.target.value)} 
-                required 
+              <input
+                type="password"
+                placeholder={t('enter_new_password', 'Enter new password')}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
                 className="input-base pl-12"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-text-secondary ml-1">Confirm Password</label>
+            <label className="text-sm font-medium text-text-secondary ml-1">{t('confirm_password', 'Confirm Password')}</label>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent-primary transition-colors" size={18} />
-              <input 
-                type="password" 
-                placeholder="Re-enter new password" 
-                value={confirmPassword} 
-                onChange={(e) => setConfirmPassword(e.target.value)} 
-                required 
+              <input
+                type="password"
+                placeholder={t('re_enter_password', 'Re-enter new password')}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
                 className="input-base pl-12"
               />
             </div>
@@ -96,12 +102,12 @@ const UpdatePasswordPage = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             className="btn-primary w-full mt-2"
           >
-            {loading ? 'Updating...' : 'Update Password'}
+            {loading ? t('updating', 'Updating...') : t('update_password', 'Update Password')}
           </button>
         </form>
       </div>

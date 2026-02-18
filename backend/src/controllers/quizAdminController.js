@@ -23,10 +23,16 @@ const createQuiz = async (req, res) => {
     let legacyDesc = description;
     let legacyQuestions = questions;
 
-    if (content && content.english) {
-      legacyTitle = content.english.title;
-      legacyDesc = content.english.description;
-      legacyQuestions = content.english.questions;
+    if (content) {
+      if (content.en) {
+        legacyTitle = content.en.title;
+        legacyDesc = content.en.description;
+        legacyQuestions = content.en.questions;
+      } else if (content.english) {
+        legacyTitle = content.english.title;
+        legacyDesc = content.english.description;
+        legacyQuestions = content.english.questions;
+      }
     }
 
     const newQuiz = await Quiz.create({
@@ -38,7 +44,7 @@ const createQuiz = async (req, res) => {
       activeDate: parsedActiveDate,
       status: 'DRAFT',
       generatedBy: 'MANUAL',
-      requiresAdminApproval: true 
+      requiresAdminApproval: true
     });
 
     res.status(201).json(newQuiz);
@@ -67,7 +73,11 @@ const updateQuiz = async (req, res) => {
       quiz.content = content;
       quiz.markModified('content');
       // Update legacy fields if English version is provided
-      if (content.english) {
+      if (content.en) {
+        quiz.title = content.en.title;
+        quiz.description = content.en.description;
+        quiz.questions = content.en.questions;
+      } else if (content.english) {
         quiz.title = content.english.title;
         quiz.description = content.english.description;
         quiz.questions = content.english.questions;
@@ -147,7 +157,7 @@ const approveQuiz = async (req, res) => {
 const activateQuiz = async (req, res) => {
   try {
     const { id } = req.params;
-    const { activeDate } = req.body; 
+    const { activeDate } = req.body;
 
     if (!activeDate) {
       return res.status(400).json({ error: 'Active date is required.' });
@@ -187,6 +197,28 @@ const activateQuiz = async (req, res) => {
   }
 };
 
+// Deactivate Quiz
+const deactivateQuiz = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const quiz = await Quiz.findById(id);
+    if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
+
+    if (quiz.status !== 'ACTIVE') {
+      return res.status(400).json({ error: 'Only ACTIVE quizzes can be deactivated.' });
+    }
+
+    quiz.status = 'INACTIVE';
+    quiz.activeDate = null; // Clear the active date
+    await quiz.save();
+
+    res.json(quiz);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const deleteQuiz = async (req, res) => {
   try {
     const { id } = req.params;
@@ -205,5 +237,6 @@ module.exports = {
   getQuizById,
   approveQuiz,
   activateQuiz,
+  deactivateQuiz,
   deleteQuiz
 };

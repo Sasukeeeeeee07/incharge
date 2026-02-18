@@ -15,9 +15,9 @@ const validateQuizStructure = (quizData, enforceContent = false) => {
   // Helper to validate a single set of questions
   const validateQuestions = (questionsArr, langName = '', title = '') => {
     const prefix = langName ? `[${langName}] ` : '';
-    
+
     if (enforceContent && langName && !title) {
-        return { isValid: false, error: `${prefix}Quiz title is required.` };
+      return { isValid: false, error: `${prefix}Quiz title is required.` };
     }
 
     if (!questionsArr || !Array.isArray(questionsArr)) {
@@ -32,7 +32,7 @@ const validateQuizStructure = (quizData, enforceContent = false) => {
       const q = questionsArr[i];
 
       if (enforceContent && !q.questionText) {
-          return { isValid: false, error: `${prefix}Question ${i + 1} text is required.` };
+        return { isValid: false, error: `${prefix}Question ${i + 1} text is required.` };
       }
 
       if (!q.options || q.options.length !== 4) {
@@ -43,17 +43,22 @@ const validateQuizStructure = (quizData, enforceContent = false) => {
       let inControlCount = 0;
       for (const opt of q.options) {
         if (enforceContent && !opt.text) {
-            return { isValid: false, error: `${prefix}Question ${i + 1} options must all have text.` };
+          return { isValid: false, error: `${prefix}Question ${i + 1} options must all have text.` };
         }
-        if (opt.type === 'In-Charge') inChargeCount++;
-        if (opt.type === 'In-Control') inControlCount++;
+        const type = (opt.answerType || opt.type || '').trim().toLowerCase();
+        if (type === 'in-charge') inChargeCount++;
+        if (type === 'in-control') inControlCount++;
       }
 
-      if (inChargeCount !== 1) {
-        return { isValid: false, error: `${prefix}Question ${i + 1} must have exactly 1 'In-Charge' option.` };
-      }
-      if (inControlCount !== 3) {
-        return { isValid: false, error: `${prefix}Question ${i + 1} must have exactly 3 'In-Control' options.` };
+      // Validating presence of at least one In-Charge and one In-Control is optional based on new requirements
+      // User requested "i want i can add as many as in-charge and in-control i want"
+      // So we remove the strict count checks.
+
+      if (inChargeCount + inControlCount !== 4) {
+        // This might still be relevant if we want to ensure all 4 options form a complete set, 
+        // but strictly speaking user just said "remove logic".
+        // However, the schema might expect 4 options. The loop above checks `q.options.length !== 4`.
+        // We will just remove the specific count checks.
       }
     }
     return { isValid: true };

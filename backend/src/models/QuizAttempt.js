@@ -5,6 +5,7 @@ const quizAttemptSchema = new mongoose.Schema({
   quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
   responses: [{
     questionId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    // STRICT RULE: Field is 'answerType'.
     answerType: { type: String, enum: ['In-Charge', 'In-Control'], required: true }
   }],
   score: {
@@ -13,7 +14,10 @@ const quizAttemptSchema = new mongoose.Schema({
   },
   result: { type: String, enum: ['In-Charge', 'In-Control', 'Balanced'] },
   language: { type: String, default: 'english' },
-  completedAt: { type: Date, default: Date.now }
+  status: { type: String, enum: ['started', 'completed'], default: 'started' },
+  currentQuestionIndex: { type: Number, default: 0 },
+  currentStep: { type: Number, default: 5 },
+  completedAt: { type: Date }
 }, { timestamps: true });
 
 // Ensure one attempt per user per quiz

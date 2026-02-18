@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../config/apiConfig';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { User, Mail, Phone, Camera, Save, ArrowLeft, Loader2, Lock, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
-  const { user: authUser, token } = useAuth();
+  const { user: authUser } = useAuth();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,9 +36,7 @@ const ProfilePage = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/user/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(`${API_BASE_URL}/user/profile`);
       setProfile(res.data);
     } catch (err) {
       setError('Failed to load profile');
@@ -60,14 +60,13 @@ const ProfilePage = () => {
     try {
       setSaving(true);
       const res = await axios.post(`${API_BASE_URL}/user/profile/upload`, formData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
+        headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       setProfile(prev => ({ ...prev, profileImage: res.data.imageUrl }));
       setSuccess('Image uploaded successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 9000);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to upload image');
     } finally {
@@ -79,12 +78,10 @@ const ProfilePage = () => {
     try {
       setSaving(true);
       setError('');
-      await axios.put(`${API_BASE_URL}/user/profile`, profile, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put(`${API_BASE_URL}/user/profile`, profile);
       setSuccess('Profile updated successfully');
       setIsEditing(false);
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 9000);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update profile');
     } finally {
@@ -110,8 +107,6 @@ const ProfilePage = () => {
       await axios.put(`${API_BASE_URL}/user/reset-password`, {
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setPasswordSuccess('Password updated successfully');
       setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -135,24 +130,24 @@ const ProfilePage = () => {
     <div className="min-h-screen md:h-screen lg:h-screen bg-bg-primary p-2 sm:p-4 md:p-8 flex flex-col items-center justify-center overflow-x-hidden md:overflow-hidden">
       <div className="max-w-3xl w-full mx-auto flex flex-col items-center justify-center">
         <div className="w-full flex justify-between items-center mb-2 md:mb-6">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors"
           >
-            <ArrowLeft size={16} /> <span className="text-sm md:text-base">Back</span>
+            <ArrowLeft size={16} /> <span className="text-sm md:text-base">{t('back', 'Back')}</span>
           </button>
         </div>
 
         <div className="glass-card p-4 sm:p-6 md:p-10 relative overflow-hidden mb-2 md:mb-6 w-full">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-primary to-accent-secondary" />
-          
+
           <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-4 md:mb-10">
             <div className="relative group">
               <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 rounded-full border-4 border-glass-border overflow-hidden bg-bg-secondary flex items-center justify-center">
                 {profile?.profileImage ? (
-                  <img 
-                    src={`${API_BASE_URL.replace('/api', '')}${profile.profileImage}`} 
-                    alt="Profile" 
+                  <img
+                    src={`${API_BASE_URL.replace('/api', '')}${profile.profileImage}`}
+                    alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -160,20 +155,20 @@ const ProfilePage = () => {
                 )}
                 <User size={64} className="text-text-secondary hidden md:block" />
               </div>
-              
+
               {isAdmin && (
-                <button 
+                <button
                   onClick={() => fileInputRef.current.click()}
                   className="absolute bottom-0 right-0 p-2 md:p-3 bg-accent-primary text-white rounded-full shadow-lg hover:scale-110 transition-transform"
                 >
                   <Camera size={14} md:size={20} />
                 </button>
               )}
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleImageUpload} 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden"
                 accept="image/*"
               />
             </div>
@@ -189,12 +184,12 @@ const ProfilePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
             <div className="space-y-1">
               <label className="text-[10px] md:text-sm text-text-secondary font-medium flex items-center gap-2">
-                <User size={12} md:size={16} /> Full Name
+                <User size={12} md:size={16} /> {t('full_name', 'Full Name')}
               </label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="name"
-                value={profile?.name || ''} 
+                value={profile?.name || ''}
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-4 py-2 md:px-5 md:py-3 text-sm md:text-base focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70"
@@ -203,12 +198,12 @@ const ProfilePage = () => {
 
             <div className="space-y-1">
               <label className="text-[10px] md:text-sm text-text-secondary font-medium flex items-center gap-2">
-                <Mail size={12} md:size={16} /> Email Address
+                <Mail size={12} md:size={16} /> {t('email_address', 'Email Address')}
               </label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 name="email"
-                value={profile?.email || ''} 
+                value={profile?.email || ''}
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-4 py-2 md:px-5 md:py-3 text-sm md:text-base focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70"
@@ -217,12 +212,12 @@ const ProfilePage = () => {
 
             <div className="space-y-1">
               <label className="text-[10px] md:text-sm text-text-secondary font-medium flex items-center gap-2">
-                <Phone size={12} md:size={16} /> Phone Number
+                <Phone size={12} md:size={16} /> {t('phone_number', 'Phone Number')}
               </label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="mobile"
-                value={profile?.mobile || ''} 
+                value={profile?.mobile || ''}
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-4 py-2 md:px-5 md:py-3 text-sm md:text-base focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70"
@@ -231,14 +226,14 @@ const ProfilePage = () => {
 
             <div className="space-y-1">
               <label className="text-[10px] md:text-sm text-text-secondary font-medium flex items-center gap-2">
-                <User size={12} md:size={16} /> Company
+                <User size={12} md:size={16} /> {t('company', 'Company')}
               </label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="company"
-                value={profile?.company || ''} 
+                value={profile?.company || ''}
                 onChange={handleInputChange}
-                disabled={true} 
+                disabled={true}
                 className="w-full bg-bg-secondary/50 border border-glass-border rounded-xl px-4 py-2 md:px-5 md:py-3 text-sm md:text-base focus:outline-none focus:border-accent-primary transition-colors disabled:opacity-70 shadow-sm"
               />
             </div>
@@ -249,37 +244,37 @@ const ProfilePage = () => {
 
           <div className="mt-4 md:mt-10 flex flex-wrap justify-end gap-2 sm:gap-4">
             {!showPasswordReset && (
-              <button 
+              <button
                 onClick={() => setShowPasswordReset(true)}
                 className="px-8 py-3 rounded-xl border border-glass-border hover:bg-white/5 transition-colors font-semibold flex items-center gap-2"
               >
-                <Lock size={18} /> Reset Password
+                <Lock size={18} /> {t('reset_password', 'Reset Password')}
               </button>
             )}
             {isAdmin && (
               isEditing ? (
                 <>
-                  <button 
+                  <button
                     onClick={() => setIsEditing(false)}
                     className="px-8 py-3 rounded-xl border border-glass-border hover:bg-white/5 transition-colors font-semibold"
                   >
-                    Cancel
+                    {t('cancel', 'Cancel')}
                   </button>
-                  <button 
+                  <button
                     onClick={handleSave}
                     disabled={saving}
                     className="btn-primary"
                   >
                     {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                    Save Changes
+                    {t('save_changes', 'Save Changes')}
                   </button>
                 </>
               ) : (
-                <button 
+                <button
                   onClick={() => setIsEditing(true)}
                   className="btn-primary"
                 >
-                  Edit Profile
+                  {t('edit_profile', 'Edit Profile')}
                 </button>
               )
             )}
@@ -293,23 +288,23 @@ const ProfilePage = () => {
               <div className="absolute top-0 left-0 w-full h-1 bg-blue-500" />
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-bold flex items-center gap-3 m-0">
-                  <Lock size={24} className="text-accent-primary" /> Reset Password
+                  <Lock size={24} className="text-accent-primary" /> {t('reset_password', 'Reset Password')}
                 </h2>
-                <button 
+                <button
                   onClick={() => setShowPasswordReset(false)}
                   className="text-text-secondary hover:text-white transition-colors"
                   type="button"
                 >
-                  Close
+                  {t('close', 'Close')}
                 </button>
               </div>
-              
+
               <form onSubmit={handleResetPassword} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm text-text-secondary font-medium">Current Password</label>
-                    <input 
-                      type="password" 
+                    <label className="text-sm text-text-secondary font-medium">{t('current_password', 'Current Password')}</label>
+                    <input
+                      type="password"
                       name="currentPassword"
                       value={passwords.currentPassword}
                       onChange={handlePasswordChange}
@@ -318,9 +313,9 @@ const ProfilePage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm text-text-secondary font-medium">New Password</label>
-                    <input 
-                      type="password" 
+                    <label className="text-sm text-text-secondary font-medium">{t('new_password', 'New Password')}</label>
+                    <input
+                      type="password"
                       name="newPassword"
                       value={passwords.newPassword}
                       onChange={handlePasswordChange}
@@ -329,9 +324,9 @@ const ProfilePage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm text-text-secondary font-medium">Confirm New Password</label>
-                    <input 
-                      type="password" 
+                    <label className="text-sm text-text-secondary font-medium">{t('confirm_password', 'Confirm Password')}</label>
+                    <input
+                      type="password"
                       name="confirmPassword"
                       value={passwords.confirmPassword}
                       onChange={handlePasswordChange}
@@ -340,27 +335,27 @@ const ProfilePage = () => {
                     />
                   </div>
                 </div>
-                
+
                 {passwordError && <p className="text-error bg-error/10 p-4 rounded-xl text-center font-medium">{passwordError}</p>}
                 {passwordSuccess && <p className="text-success bg-success/10 p-4 rounded-xl text-center font-medium">{passwordSuccess}</p>}
 
                 <div className="flex justify-end pt-4">
-                  <button 
+                  <button
                     type="submit"
                     disabled={resettingPassword}
                     className="btn-primary w-full sm:w-auto"
                   >
                     {resettingPassword ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                    Update Password
+                    {t('update_password', 'Update Password')}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         )}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default ProfilePage;
