@@ -38,7 +38,8 @@ const login = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000 // 1 day
     });
 
-    res.json({
+    console.log('Debug Login: Sending response');
+    return res.json({
       user: {
         id: user._id,
         name: user.name,
@@ -48,7 +49,8 @@ const login = async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Debug Login: Error in login controller', err);
+    return res.status(500).json({ error: 'Server error', details: err.message });
   }
 };
 

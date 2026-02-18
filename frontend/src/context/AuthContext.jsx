@@ -29,16 +29,19 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
+      console.log('Attempting login with:', credentials.email);
       setError(null);
       const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials, {
         headers: { 'Content-Type': 'application/json' },
-        withCredentials: true
+        withCredentials: true,
+        timeout: 15000 // 15s timeout
       });
+      console.log('Login successful:', response.data);
       setUser(response.data.user);
       return { success: true, user: response.data.user };
     } catch (err) {
       console.error("Login Error:", err);
-      const sendErr = err.response?.data?.message || 'Login failed';
+      const sendErr = err.response?.data?.error || err.response?.data?.message || err.message || 'Login failed';
       setError(sendErr);
       return { success: false, message: sendErr };
     }

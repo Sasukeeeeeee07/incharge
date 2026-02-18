@@ -455,14 +455,30 @@ const QuizPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4"
+            className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-4" // flex-col added for vertical stacking
             onClick={handleNext}
           >
             <img
               src={selectedAnswerType === 'In-Charge' ? '/inCharge.png' : '/inControl.png'}
               alt={selectedAnswerType}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-[70%] object-contain mb-6" // Restrict height to leave room for text
             />
+            <h2
+              className={`text-3xl font-black tracking-widest uppercase py-2 px-6 rounded-lg bg-white/10 backdrop-blur-md mb-8 ${selectedAnswerType === 'In-Charge' ? 'text-green-500' : 'text-red-500'
+                }`}
+            >
+              {selectedAnswerType}
+            </h2>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNext();
+              }}
+              className="px-8 py-3 bg-white text-black font-bold text-lg rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group"
+            >
+              Next <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
