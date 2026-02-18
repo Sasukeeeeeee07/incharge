@@ -45,10 +45,10 @@ const LoginPage = () => {
         {/* Header */}
         <div className="mb-10 text-center">
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-lg mb-2">
-            {t('welcome_back', 'Welcome Back')}
+            {t('Welcome', 'Welcome Back')}
           </h1>
           <p className="text-white/60 text-lg">
-            {t('sign_in_continue', 'Sign in to continue')}
+            {t('Sign in to Continue', 'Sign in to continue')}
           </p>
         </div>
 
@@ -63,7 +63,7 @@ const LoginPage = () => {
         {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-blue-200/80 ml-1">{t('email_address', 'Email Address')}</label>
+            <label className="text-sm font-medium text-blue-200/80 ml-1">{t('Email Address', 'Email Address')}</label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-400 text-white/30">
                 <Mail size={20} />
@@ -74,7 +74,7 @@ const LoginPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-white/10 transition-all duration-300"
-                placeholder={t('email_placeholder', 'name@company.com')}
+                placeholder={t('email placeholder', 'name@company.com')}
               />
             </div>
           </div>
@@ -115,7 +115,7 @@ const LoginPage = () => {
               </>
             ) : (
               <>
-                <span>{t('sign_in', 'Sign In')}</span>
+                <span>{t('Sign In', 'Sign In')}</span>
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </>
             )}

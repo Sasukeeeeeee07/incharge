@@ -54,10 +54,27 @@ const QuizPage = () => {
 
   const [showMobileOverlay, setShowMobileOverlay] = useState(false); // New State
 
+  // Audio refs for In-Control feedback
+  const audioRef = React.useRef(null);
+  const audioTimeoutRef = React.useRef(null);
+
   // Default to 'take-quiz' for a fresh experience
   const [view, setView] = useState('take-quiz');
   const [history, setHistory] = useState([]);
   const [selectedHistoryQuiz, setSelectedHistoryQuiz] = useState(null);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      if (audioTimeoutRef.current) {
+        clearTimeout(audioTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -153,7 +170,43 @@ const QuizPage = () => {
       return;
     }
 
+    // Play Audio Feedback
+    const audioMap = {
+      'In-Charge': '/inchargeaudio.mpeg',
+      'In-Control': '/incontrolaudio.mp3'
+    };
+
+    const audioFile = audioMap[answerType];
+
+    if (audioFile) {
+      try {
+        // Stop any existing audio
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
+        if (audioTimeoutRef.current) {
+          clearTimeout(audioTimeoutRef.current);
+        }
+
+        // Initialize and play new audio
+        const audio = new Audio(audioFile);
+        audioRef.current = audio;
+
+        audio.play().catch(err => console.error("Audio playback error:", err));
+
+        // Stop after 5 seconds
+        audioTimeoutRef.current = setTimeout(() => {
+          audio.pause();
+          audio.currentTime = 0;
+        }, 5000);
+      } catch (e) {
+        console.error("Failed to setup audio:", e);
+      }
+    }
+
     const langKey = currentLanguage?.toLowerCase();
+
     const questions = (quiz.content && langKey && quiz.content[langKey])
       ? quiz.content[langKey].questions
       : (quiz.questions || []);
@@ -356,7 +409,65 @@ const QuizPage = () => {
       {/* Full Screen Rocket Background */}
       {renderNavbar()}
 
-      <main className="flex-1 p-4 md:p-6 lg:pt-8 flex flex-col items-center max-w-7xl mx-auto w-full overflow-hidden justify-start">
+      {/* Dynamic Full Screen Background - Moved to Root Level */}
+      <AnimatePresence>
+        {view === 'quiz' && selectedAnswerType === 'In-Charge' && (
+          <motion.div
+            key="bg-charge"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 z-0 bg-black/5"
+          >
+            {/* Subtle overlay to ensure text readability */}
+            <div className="absolute inset-0 bg-black/10 z-10" />
+            <img
+              src="/inchargeBackground.jpg"
+              alt="In Charge Background"
+              className="w-full h-full object-cover object-center"
+            />
+          </motion.div>
+        )}
+        {view === 'quiz' && selectedAnswerType === 'In-Control' && (
+          <motion.div
+            key="bg-control"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 z-0 bg-black/5"
+          >
+            <div className="absolute inset-0 bg-black/10 z-10" />
+            <img
+              src="/incontrolBackground.jpg"
+              alt="In Control Background"
+              className="w-full h-full object-cover object-right-top"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Interaction Overlay */}
+      <AnimatePresence>
+        {isMobile && showMobileOverlay && selectedAnswerType && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4"
+            onClick={handleNext}
+          >
+            <img
+              src={selectedAnswerType === 'In-Charge' ? '/inCharge.png' : '/inControl.png'}
+              alt={selectedAnswerType}
+              className="max-w-full max-h-full object-contain"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <main className="flex-1 p-4 md:p-6 lg:pt-8 flex flex-col items-center max-w-7xl mx-auto w-full overflow-hidden justify-start relative z-10">
 
         {view === 'take-quiz' && quiz && (
           <div className="w-full">
@@ -459,44 +570,11 @@ const QuizPage = () => {
 
         {view === 'quiz' && quiz && (
           <div className="w-full h-full flex flex-col lg:flex-row overflow-hidden relative z-10">
-            {/* Mobile Image Overlay */}
-            <AnimatePresence>
-              {isMobile && showMobileOverlay && selectedAnswerType && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-8 backdrop-blur-md"
-                  onClick={handleNext}
-                >
-                  <div className="text-white text-lg mb-4 font-bold uppercase tracking-widest animate-pulse">Tap to Continue</div>
-                  {selectedAnswerType === 'In-Charge' && (
-                    <motion.img
-                      initial={{ scale: 0.5, rotate: -10 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      exit={{ scale: 0.5, opacity: 0 }}
-                      src="/inCharge.png"
-                      alt="In Charge"
-                      className="max-w-full max-h-[60vh] object-contain drop-shadow-[0_0_30px_rgba(5,150,105,0.6)] pointer-events-none"
-                    />
-                  )}
-                  {selectedAnswerType === 'In-Control' && (
-                    <motion.img
-                      initial={{ scale: 0.5, rotate: 10 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      exit={{ scale: 0.5, opacity: 0 }}
-                      src="/inControl.png"
-                      alt="In Control"
-                      className="max-w-full max-h-[60vh] object-contain drop-shadow-[0_0_30px_rgba(220,38,38,0.6)] pointer-events-none"
-                    />
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
 
-            {/* Left Column: Question & Options */}
-            <div className={`w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start p-4 lg:p-10 lg:pl-20 overflow-y-auto transition-all duration-500`}>
-              <div className="max-w-2xl w-full">
+
+            {/* Content Column */}
+            <div className={`w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start p-4 lg:p-10 lg:pl-20 overflow-y-auto transition-all duration-500 relative z-20`}>
+              <div className="max-w-xl w-full">
                 <AnimatePresence mode="wait">
                   {/* ... existing question rendering ... */}
                   {(() => {
@@ -521,7 +599,7 @@ const QuizPage = () => {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        className="glass-card p-6 md:p-10 relative overflow-hidden"
+                        className="glass-card p-6 md:p-8 relative overflow-hidden backdrop-blur-xl bg-black/40 border-white/10"
                       >
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-primary to-accent-secondary" />
                         <p className="text-accent-primary font-bold mb-4 tracking-wider text-sm uppercase">
@@ -554,47 +632,6 @@ const QuizPage = () => {
                   })()}
                 </AnimatePresence>
               </div>
-            </div>
-
-            {/* Right Column: Dynamic Image Animation */}
-            <div className="hidden lg:flex w-1/2 justify-center items-center p-10 relative overflow-hidden">
-              <AnimatePresence mode="wait">
-                {selectedAnswerType === 'In-Charge' && (
-                  <motion.img
-                    key="in-charge-img"
-                    src="/inCharge.png"
-                    alt="In Charge"
-                    initial={{ opacity: 0, scale: 0.9, x: 20 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, x: -20 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="max-h-[80%] max-w-[80%] object-contain drop-shadow-[0_0_30px_rgba(5,150,105,0.6)]"
-                  />
-                )}
-                {selectedAnswerType === 'In-Control' && (
-                  <motion.img
-                    key="in-control-img"
-                    src="/inControl.png"
-                    alt="In Control"
-                    initial={{ opacity: 0, scale: 0.9, x: 20 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, x: -20 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="max-h-[80%] max-w-[80%] object-contain drop-shadow-[0_0_30px_rgba(220,38,38,0.6)]"
-                  />
-                )}
-                {!selectedAnswerType && (
-                  <motion.div
-                    key="placeholder"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.3 }}
-                    exit={{ opacity: 0 }}
-                    className="text-white/10 text-9xl font-bold"
-                  >
-                    ?
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           </div>
         )}
