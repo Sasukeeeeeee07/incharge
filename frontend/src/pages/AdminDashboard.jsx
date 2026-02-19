@@ -9,14 +9,50 @@ import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import UserPerformance from '../components/UserPerformance';
 import { Upload, Users, List, BarChart2, LogOut, Download, X, Plus, UserCircle, TrendingUp } from 'lucide-react';
 
+import QuizImportModal from '../components/QuizImportModal';
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('analytics');
+
   const [users, setUsers] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [quizView, setQuizView] = useState('list'); // 'list' or 'editor'
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [file, setFile] = useState(null);
   const [importSummary, setImportSummary] = useState(null);
+
+  // New State for bulk import
+  const [quizImportModalOpen, setQuizImportModalOpen] = useState(false);
+
+  // ... existing hooks ...
+
+  const handleBulkImport = (questions) => {
+    // Switch to editor mode
+    // Create new blank quiz structure or update existing?
+    // Let's create a new blank quiz with these questions pre-filled
+    const newQuizTemplate = {
+      title: 'Bulk Imported Quiz',
+      description: 'Imported via Admin Dashboard',
+      questions: questions,
+      content: {
+        en: {
+          title: 'Bulk Imported Quiz',
+          description: 'Questions imported from text source.',
+          questions: questions
+        }
+      }
+    };
+
+    setSelectedQuiz(newQuizTemplate);
+    setQuizView('editor');
+    setSuccess('Questions imported successfully. Review and Save.');
+    setTimeout(() => setSuccess(''), 6000);
+  };
+
+  // ... existing code ...
+
+
+
   const [loading, setLoading] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -87,9 +123,7 @@ const AdminDashboard = () => {
     formData.append('file', file);
 
     try {
-      console.log('Starting import...');
       const res = await axios.post(`${API_BASE_URL}/admin/import`, formData);
-      console.log('Import response:', res.data);
       setImportSummary(res.data);
       setFile(null); // Clear file input
       // Reset file input value manually if needed, or rely on key change
@@ -124,13 +158,9 @@ const AdminDashboard = () => {
 
   const handleManualCreateUsers = async (e) => {
     e.preventDefault();
-    console.log('Frontend: handleManualCreateUsers called');
-    console.log('Frontend: Sending Payload:', newUsers);
-
     setLoading(true);
     try {
       const res = await axios.post(`${API_BASE_URL}/admin/users`, { users: newUsers });
-      console.log('Frontend: Response Received:', res.data);
       setImportSummary(res.data);
       setAddUserModalOpen(false);
       setNewUsers([{ name: '', email: '', mobile: '', company: '' }]);
@@ -164,9 +194,7 @@ const AdminDashboard = () => {
     if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
 
     try {
-      console.log(`Attempting to delete user: ${userId}`);
-      const response = await axios.delete(`${API_BASE_URL}/admin/users/${userId}`);
-      console.log('Delete response:', response);
+      await axios.delete(`${API_BASE_URL}/admin/users/${userId}`);
       setUserEditModalOpen(false);
       fetchUsers();
       setSuccess('User deleted successfully');
@@ -188,7 +216,6 @@ const AdminDashboard = () => {
     if (resetPasswordValue.length < 4) return alert("Password must be at least 4 characters");
 
     try {
-      console.log(`Resetting password for user ${selectedUser._id}`);
       await axios.put(`${API_BASE_URL}/admin/users/${selectedUser._id}/reset-password`, { newPassword: resetPasswordValue });
       setSuccess("Password reset successfully");
       setTimeout(() => setSuccess(''), 6000);
@@ -646,12 +673,20 @@ const AdminDashboard = () => {
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-3xl font-bold">Quiz Management</h1>
               {quizView === 'list' && (
-                <button
-                  onClick={handleCreateQuiz}
-                  className="btn-primary"
-                >
-                  <Plus size={18} /> Create Quiz
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setQuizImportModalOpen(true)}
+                    className="btn-secondary flex items-center gap-2"
+                  >
+                    <Upload size={18} /> Import Questions
+                  </button>
+                  <button
+                    onClick={handleCreateQuiz}
+                    className="btn-primary"
+                  >
+                    <Plus size={18} /> Create Quiz
+                  </button>
+                </div>
               )}
             </div>
 
@@ -677,6 +712,12 @@ const AdminDashboard = () => {
 
         {activeTab === 'analytics' && <AnalyticsDashboard />}
         {activeTab === 'performance' && <UserPerformance />}
+
+        <QuizImportModal
+          isOpen={quizImportModalOpen}
+          onClose={() => setQuizImportModalOpen(false)}
+          onImport={handleBulkImport}
+        />
       </main>
     </div>
   );

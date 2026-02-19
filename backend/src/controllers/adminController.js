@@ -11,21 +11,16 @@ const generateTempPassword = (name, mobile) => {
 
 const bulkImport = async (req, res) => {
   try {
-    console.log('Debug Import: Request received');
     if (!req.file) {
-      console.log('Debug Import: No file uploaded');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     const filePath = req.file.path;
-    console.log(`Debug Import: File uploaded to ${filePath}`);
-
     const results = [];
     const summary = { success: 0, failure: 0, duplicates: 0, updated: 0, details: [] };
 
     try {
       if (req.file.originalname.endsWith('.csv')) {
-        console.log('Debug Import: Parsing CSV');
         await new Promise((resolve, reject) => {
           fs.createReadStream(filePath)
             .pipe(csv())
@@ -34,7 +29,6 @@ const bulkImport = async (req, res) => {
             .on('error', reject);
         });
       } else {
-        console.log('Debug Import: Parsing Excel');
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.readFile(filePath);
         const worksheet = workbook.getWorksheet(1);
@@ -54,10 +48,7 @@ const bulkImport = async (req, res) => {
         });
       }
 
-      console.log(`Debug Import: Parsed ${results.length} rows`);
-
       for (const row of results) {
-        // ... (rest of processing) ...
         const normalizedRow = {};
         Object.keys(row).forEach(key => {
           if (key) normalizedRow[key.trim().toLowerCase()] = row[key];
@@ -69,8 +60,6 @@ const bulkImport = async (req, res) => {
         const company = normalizedRow['company'];
         const accessFlag = normalizedRow['accessflag'];
 
-        // console.log(`Debug Import: Processing ${email}`);
-
         if (!name || !email || !mobile) {
           summary.failure++;
           summary.details.push({ email: email || 'Unknown', error: 'Missing mandatory fields' });
@@ -79,7 +68,6 @@ const bulkImport = async (req, res) => {
 
         const existingUser = await User.findOne({ email: email });
         if (existingUser) {
-          // ... update logic ...
           const isDifferent =
             existingUser.name !== name ||
             existingUser.mobile !== mobile.toString() ||
@@ -119,15 +107,14 @@ const bulkImport = async (req, res) => {
       }
 
       fs.unlinkSync(filePath);
-      console.log('Debug Import: Completed successfully');
       res.json(summary);
     } catch (err) {
-      console.error('Debug Import: Processing Error', err);
+      console.error('Import processing error:', err);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       res.status(500).json({ error: 'Import failed: ' + err.message });
     }
   } catch (outerErr) {
-    console.error('Debug Import: Outer Error', outerErr);
+    console.error('Import error:', outerErr);
     res.status(500).json({ error: 'Import failed: ' + outerErr.message });
   }
 };
@@ -186,10 +173,8 @@ const exportUsers = async (req, res) => {
 
 const createUsers = async (req, res) => {
   const { users } = req.body;
-  console.log('Debug CreateUsers: Received payload', JSON.stringify(req.body));
 
   if (!users || !Array.isArray(users)) {
-    console.error('Debug CreateUsers: Invalid payload format');
     return res.status(400).json({ error: 'Valid users array required' });
   }
 
@@ -198,21 +183,16 @@ const createUsers = async (req, res) => {
   try {
     for (const userData of users) {
       const { name, email, mobile, company } = userData;
-      console.log(`Debug CreateUsers: Processing user ${email}`);
 
       if (!name || !email || !mobile) {
-        console.warn(`Debug CreateUsers: Missing fields for ${email}`);
         summary.failure++;
         summary.details.push({ email: email || 'Unknown', error: 'Missing mandatory fields (Name, Email, Mobile)' });
         continue;
       }
 
-      // Check existence
       const existingUser = await User.findOne({ email: email });
       if (existingUser) {
-        console.warn(`Debug CreateUsers: User already exists ${email}`);
         summary.duplicates++;
-        // Optional: Update user if exists? For now, just skip/report duplicate as per current logic
         summary.details.push({ email, error: 'User already exists' });
         continue;
       }
@@ -229,19 +209,17 @@ const createUsers = async (req, res) => {
           accessFlag: true,
           firstLoginRequired: true
         });
-        console.log(`Debug CreateUsers: Created user ${email}`);
         summary.success++;
       } catch (err) {
-        console.error(`Debug CreateUsers: Creation error for ${email}`, err);
+        console.error(`User creation error for ${email}:`, err);
         summary.failure++;
         summary.details.push({ email: email, error: err.message });
       }
     }
 
-    console.log('Debug CreateUsers: Completed summary', summary);
     res.json(summary);
   } catch (err) {
-    console.error('Debug CreateUsers: Critical error', err);
+    console.error('Create users error:', err);
     res.status(500).json({ error: 'Creation failed: ' + err.message });
   }
 };
@@ -275,25 +253,21 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log(`Debug DeleteUser: Request to delete user ${userId}`);
 
     const user = await User.findById(userId);
 
     if (!user) {
-      console.log(`Debug DeleteUser: User ${userId} not found`);
       return res.status(404).json({ error: 'User not found' });
     }
 
     if (user.role === 'admin') {
-      console.log(`Debug DeleteUser: Attempt to delete admin ${userId} blocked`);
       return res.status(403).json({ error: 'Admins cannot be deleted' });
     }
 
     await User.findByIdAndDelete(userId);
-    console.log(`Debug DeleteUser: User ${userId} deleted successfully`);
     res.json({ message: 'User deleted successfully' });
   } catch (err) {
-    console.error(`Debug DeleteUser: Error deleting user:`, err);
+    console.error('Delete user error:', err);
     res.status(500).json({ error: 'Failed to delete user: ' + err.message });
   }
 };
