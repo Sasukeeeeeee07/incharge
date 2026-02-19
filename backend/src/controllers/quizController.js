@@ -10,26 +10,17 @@ const getActiveQuiz = async (req, res) => {
     const endOfToday = new Date(startOfToday);
     endOfToday.setDate(endOfToday.getDate() + 1);
 
-    console.log('Debug Active Quiz: Looking for quiz between', startOfToday, 'and', endOfToday);
-
-    // Relaxed logic: Get the LATEST active quiz that is active on or before today
-    // This allows a quiz activated "Yesterday" to still show up if no new one is set for today.
-    // However, it prevents "Tomorrow's" quiz from showing up early.
-
     const quiz = await Quiz.findOne({
       status: 'ACTIVE',
       activeDate: { $lte: endOfToday }
-    }).sort({ activeDate: -1 }); // Get the most recent one
+    }).sort({ activeDate: -1 });
 
     if (!quiz) {
-      console.log('Debug Active Quiz: No active quiz found on or before today.');
       return res.status(404).json({ error: 'No active quiz' });
     }
 
-    console.log('Debug Active Quiz: Found quiz:', quiz.title);
-
     const attempt = await QuizAttempt.findOne({ userId: req.user.id, quizId: quiz._id });
-    const quizJson = quiz.toJSON({ flattenMaps: true }); // Ensure content map is converted
+    const quizJson = quiz.toJSON({ flattenMaps: true });
 
     const isCompleted = attempt && attempt.status === 'completed';
 
@@ -82,31 +73,23 @@ const saveProgress = async (req, res) => {
 const submitQuiz = async (req, res) => {
   const { quizId, responses, language } = req.body;
   try {
-    console.log('DEBUG: submitQuiz called');
-    console.log('DEBUG: User ID:', req.user.id);
-    console.log('DEBUG: Payload Responses Count:', responses?.length);
-
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
-      console.error('DEBUG: Quiz not found:', quizId);
       return res.status(404).json({ error: 'Quiz not found' });
     }
 
-    // Check for existing completed attempt first (Read-only check)
     const existingAttempt = await QuizAttempt.findOne({ userId: req.user.id, quizId });
     if (existingAttempt && existingAttempt.status === 'completed') {
-      console.log('DEBUG: User already attempted quiz');
       return res.status(403).json({ error: 'Already attempted' });
     }
 
     let inCharge = 0;
     let inControl = 0;
 
-    // Normalize and Score
     const normalizedResponses = [];
 
-    responses.forEach((resp, index) => {
-      const raw = (resp.answerType || '').toLowerCase().replace(/[^a-z]/g, ''); // Keep only letters
+    responses.forEach((resp) => {
+      const raw = (resp.answerType || '').toLowerCase().replace(/[^a-z]/g, '');
       let type = null;
 
       if (raw.includes('charge')) {
@@ -116,9 +99,8 @@ const submitQuiz = async (req, res) => {
         type = 'In-Control';
         inControl++;
       } else {
-        console.warn(`DEBUG Response ${index}: Unrecognized answerType '${resp.answerType}'. Defaulting to 'In-Charge' for safety.`);
-        type = 'In-Charge'; // Fallback to prevent validation error preventing entire save
-        inCharge++; // Count it
+        type = 'In-Charge';
+        inCharge++;
       }
 
       normalizedResponses.push({
@@ -127,8 +109,6 @@ const submitQuiz = async (req, res) => {
       });
     });
 
-    console.log(`DEBUG Scoring: Charge=${inCharge}, Control=${inControl}`);
-
     let result = 'Balanced';
     if (inCharge > inControl) {
       result = 'In-Charge';
@@ -136,9 +116,6 @@ const submitQuiz = async (req, res) => {
       result = 'In-Control';
     }
 
-    console.log('DEBUG: Saving attempt...');
-
-    // Use findOneAndUpdate with upsert
     const attempt = await QuizAttempt.findOneAndUpdate(
       { userId: req.user.id, quizId },
       {
@@ -154,13 +131,11 @@ const submitQuiz = async (req, res) => {
       { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true }
     );
 
-    console.log('DEBUG: Attempt saved successfully:', attempt._id);
     res.json(attempt);
   } catch (err) {
     console.error('SUBMISSION CRITICAL ERROR:', err);
     if (err.name === 'ValidationError') {
       const messages = Object.values(err.errors).map(val => val.message);
-      console.error('Validation Details:', messages);
       return res.status(400).json({ error: 'Validation Error', details: messages });
     }
     res.status(500).json({ error: 'Submission failed', details: err.message });

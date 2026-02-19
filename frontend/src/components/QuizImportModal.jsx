@@ -12,7 +12,7 @@ const QuizImportModal = ({ isOpen, onClose, onImport }) => {
         if (!text.trim()) return;
 
         // Pre-process: Ensure options start on new lines
-        // This handles cases where user pastes "A. Option...-0 B. Option..." on one line
+        // Handles cases where options are pasted on one line
         const formattedText = text.replace(/([A-D]\.)/g, '\n$1');
 
         const lines = formattedText.split('\n');
@@ -26,37 +26,29 @@ const QuizImportModal = ({ isOpen, onClose, onImport }) => {
             // Detect Question: Starts with number followed by dot
             const questionMatch = trimmedLine.match(/^\d+\.\s+(.+)/);
             if (questionMatch) {
-                if (currentQuestion) {
-                    questions.push(currentQuestion);
-                }
+                if (currentQuestion) questions.push(currentQuestion);
                 currentQuestion = {
-                    questionText: questionMatch[1],
+                    questionText: questionMatch[1].trim(),
                     options: []
                 };
             }
             // Detect Option: Starts with letter A-D followed by dot
             else if (currentQuestion && trimmedLine.match(/^[A-D]\.\s+/)) {
-                // Extract text and score
-                // Format: A. Text content-Score
-                // Note: Score is at the end after a dash
-                const lastDashIndex = trimmedLine.lastIndexOf('-');
                 let optionText = trimmedLine;
                 let score = 0;
 
-                if (lastDashIndex !== -1) {
-                    const scorePart = trimmedLine.substring(lastDashIndex + 1).trim();
-                    if (!isNaN(scorePart)) {
-                        score = parseInt(scorePart, 10);
-                        // Remove score from text
-                        optionText = trimmedLine.substring(0, lastDashIndex).trim();
-                    }
+                // Support separators: em dash (\u2013 –), en dash (\u2014 —), or regular hyphen (-)
+                // Match a score number at the very end of the line after any of these separators
+                const scoreMatch = optionText.match(/(.*)[\-\u2013\u2014]\s*(\d+)\s*$/);
+                if (scoreMatch) {
+                    score = parseInt(scoreMatch[2], 10);
+                    optionText = scoreMatch[1].trim();
                 }
 
-                // Clean option text (remove prefix A. B. etc)
-                optionText = optionText.replace(/^[A-D]\.\s+/, '');
+                // Remove option prefix (A. B. C. D.)
+                optionText = optionText.replace(/^[A-D]\.\s+/, '').trim();
 
-                // Map Score to Type
-                // Logic: Score > 7 creates 'In-Charge', else 'In-Control'
+                // Score > 7 → In-Charge, otherwise → In-Control
                 const type = score > 7 ? 'In-Charge' : 'In-Control';
 
                 currentQuestion.options.push({
@@ -67,9 +59,7 @@ const QuizImportModal = ({ isOpen, onClose, onImport }) => {
             }
         });
 
-        if (currentQuestion) {
-            questions.push(currentQuestion);
-        }
+        if (currentQuestion) questions.push(currentQuestion);
 
         setParsedQuestions(questions);
         setStep(2);
@@ -105,15 +95,17 @@ const QuizImportModal = ({ isOpen, onClose, onImport }) => {
                 {step === 1 ? (
                     <div className="flex-1 flex flex-col min-h-0">
                         <p className="text-text-secondary mb-4 text-sm">
-                            Paste your question text below. Ensure format:<br />
-                            <code>1. Question Text...</code><br />
-                            <code>A. Option Text...-Score</code>
+                            Paste your question text below. Each option must end with a score number after a dash or em dash.<br />
+                            <code className="text-orange-400">1. Question text here</code><br />
+                            <code className="text-orange-400">A. Option text – 9</code>&nbsp;&nbsp;<span className="opacity-50">(score &gt; 7 → In-Charge, ≤ 7 → In-Control)</span>
                         </p>
                         <textarea
                             className="flex-1 input-base resize-none font-mono text-xs custom-scrollbar"
-                            placeholder={`1. Question...
-A. Option-0
-B. Option-10...`}
+                            placeholder={`1. Question text here
+A. Option text – 0
+B. Option text – 4
+C. Option text – 9
+D. Option text – 2`}
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                         />
@@ -129,9 +121,15 @@ B. Option-10...`}
                     </div>
                 ) : (
                     <div className="flex-1 flex flex-col min-h-0">
+                        {parsedQuestions.some(q => q.options.some(o => !o.text)) && (
+                            <div className="flex items-center gap-2 p-3 mb-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-400 text-xs">
+                                <AlertTriangle size={14} />
+                                Some options have empty text — check your format. Options must end with a score like <code className="mx-1">– 9</code> or <code className="mx-1">- 9</code>.
+                            </div>
+                        )}
                         <div className="flex justify-between items-center mb-4">
                             <div className="text-sm text-text-secondary">
-                                Found {parsedQuestions.length} questions. Review mappings below.
+                                Found {parsedQuestions.length} questions. Score &gt; 7 → <span className="text-green-400 font-bold">In-Charge</span>, ≤ 7 → <span className="text-red-400 font-bold">In-Control</span>. Review below.
                             </div>
                             <div className="flex gap-2">
                                 <button

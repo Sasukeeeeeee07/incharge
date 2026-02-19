@@ -34,12 +34,10 @@ const UpdatePasswordPage = () => {
     }
 
     setLoading(true);
-    console.log('Debug: Attempting password update for user:', user?.id);
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/update-password`, { newPassword }, {
         withCredentials: true
       });
-      console.log('Debug: Password update success', response.data);
       const updatedUser = { ...user, firstLoginRequired: false };
       setUser(updatedUser);
       navigate(user.role === 'admin' ? '/admin' : '/quiz');

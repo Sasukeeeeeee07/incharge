@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../config/apiConfig';
-// Ladder component removed as replaced by RocketAnimation
 import QuizHistory from '../components/QuizHistory';
-import Speedometer from '../components/Speedometer';
 import QuizResultView from '../components/QuizResultView';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, UserCircle, History, PlayCircle, Calendar, ChevronRight } from 'lucide-react';
-
 import RoleToggle from '../components/RoleToggle';
 
 const useWindowSize = () => {
@@ -36,7 +33,7 @@ const useWindowSize = () => {
 
 const QuizPage = () => {
   const { logout, user } = useAuth();
-  const { languages, t, currentLanguage, setCurrentLanguage } = useLanguage();
+  const { t, currentLanguage, setCurrentLanguage } = useLanguage();
   const navigate = useNavigate();
   const { width } = useWindowSize();
   const isMobile = width < 1024;
@@ -49,19 +46,14 @@ const QuizPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedAnswerType, setSelectedAnswerType] = useState(null); // Added State
-
-
-  const [showMobileOverlay, setShowMobileOverlay] = useState(false); // New State
-
-  // Audio refs for In-Control feedback
-  const audioRef = React.useRef(null);
-  const audioTimeoutRef = React.useRef(null);
-
-  // Default to 'take-quiz' for a fresh experience
+  const [selectedAnswerType, setSelectedAnswerType] = useState(null);
+  const [showMobileOverlay, setShowMobileOverlay] = useState(false);
   const [view, setView] = useState('take-quiz');
   const [history, setHistory] = useState([]);
   const [selectedHistoryQuiz, setSelectedHistoryQuiz] = useState(null);
+
+  const audioRef = React.useRef(null);
+  const audioTimeoutRef = React.useRef(null);
 
   // Cleanup audio on unmount
   useEffect(() => {
@@ -81,29 +73,6 @@ const QuizPage = () => {
     navigate('/login');
   };
 
-  // Persist state to sessionStorage
-  // Save progress whenever key state changes
-  /*
-  useEffect(() => {
-    if (quiz && !completed && responses.length > 0) {
-      saveProgress();
-    }
-  }, [responses, currentQuestionIndex, currentLanguage]);
-
-  const saveProgress = async () => {
-    try {
-      await axios.put(`${API_BASE_URL}/quiz/progress`, {
-        quizId: quiz._id,
-        responses,
-        currentQuestionIndex,
-        language: currentLanguage
-      });
-    } catch (err) {
-      console.error('Failed to save progress', err);
-    }
-  };
-  */
-
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -111,7 +80,6 @@ const QuizPage = () => {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      // Parallel fetch today's quiz and history
       const [quizRes, historyRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/quiz/active`).catch(err => ({ status: 404 })),
         axios.get(`${API_BASE_URL}/quiz/history`).catch(err => ({ data: [] }))
@@ -124,25 +92,21 @@ const QuizPage = () => {
         setQuiz(quizData);
 
         if (alreadyAttempted) {
-          // Completed previously
           setResult(attempt);
           setCompleted(true);
           setResponses(attempt.responses);
-          setView('take-quiz'); // Show card with "View Results"
+          setView('take-quiz');
         } else if (attempt && attempt.status === 'started') {
-          // Resuming an in-progress quiz
           setView('quiz');
           setResponses(attempt.responses || []);
           setCurrentQuestionIndex(attempt.currentQuestionIndex || 0);
           if (attempt.language) setCurrentLanguage(attempt.language);
         } else {
-          // New active quiz, never started
           setView('take-quiz');
           setCurrentQuestionIndex(0);
           setResponses([]);
         }
       } else {
-        // No quiz for today
         setView('history');
       }
     } catch (err) {
@@ -161,16 +125,13 @@ const QuizPage = () => {
     }
   };
 
-
-
   const handleAnswer = (answerType) => {
-    if (selectedAnswerType) return; // Block input during animation
+    if (selectedAnswerType) return;
     if (!answerType) {
       console.warn("handleAnswer called with missing answerType");
       return;
     }
 
-    // Play Audio Feedback
     const audioMap = {
       'In-Charge': '/inchargeaudio.mpeg',
       'In-Control': '/incontrolaudio.mp3'
@@ -180,7 +141,6 @@ const QuizPage = () => {
 
     if (audioFile) {
       try {
-        // Stop any existing audio
         if (audioRef.current) {
           audioRef.current.pause();
           audioRef.current.currentTime = 0;
@@ -189,13 +149,11 @@ const QuizPage = () => {
           clearTimeout(audioTimeoutRef.current);
         }
 
-        // Initialize and play new audio
         const audio = new Audio(audioFile);
         audioRef.current = audio;
 
         audio.play().catch(err => console.error("Audio playback error:", err));
 
-        // Stop after 5 seconds
         audioTimeoutRef.current = setTimeout(() => {
           audio.pause();
           audio.currentTime = 0;
@@ -206,20 +164,17 @@ const QuizPage = () => {
     }
 
     const langKey = currentLanguage?.toLowerCase();
-
     const questions = (quiz.content && langKey && quiz.content[langKey])
       ? quiz.content[langKey].questions
       : (quiz.questions || []);
 
     if (questions.length === 0 || !questions[currentQuestionIndex]) return;
 
-    // 1. Trigger Animation & Feedback
     setSelectedAnswerType(answerType);
     if (isMobile) {
       setShowMobileOverlay(true);
     }
 
-    // 2. Save Response Immediately (but don't advance)
     const questionId = questions[currentQuestionIndex]._id;
     const existingResponseIndex = responses.findIndex(r => r.questionId === questionId);
 
@@ -244,7 +199,7 @@ const QuizPage = () => {
 
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
-      setSelectedAnswerType(null); // Reset UI for next question
+      setSelectedAnswerType(null);
     } else {
       submitQuiz(responses);
     }
@@ -260,7 +215,7 @@ const QuizPage = () => {
       setResult(res.data);
       setCompleted(true);
       setView('result');
-      fetchHistory(); // Refresh history after submission
+      fetchHistory();
     } catch (err) {
       setError('Failed to submit quiz');
     }
@@ -268,7 +223,7 @@ const QuizPage = () => {
 
   const handleSelectHistoryQuiz = (attempt) => {
     setSelectedHistoryQuiz(attempt);
-    setShowDetails(false); // Start with speedometer view
+    setShowDetails(false);
     setView('history-detail');
   };
 
@@ -287,7 +242,6 @@ const QuizPage = () => {
           className="h-8 md:h-12 w-auto object-contain transition-transform hover:scale-105"
         />
       </div>
-
 
       <div className="flex items-center gap-2 md:gap-5">
         <span className="text-text-secondary hidden lg:inline">{t('welcome')}, {user?.name}</span>
@@ -334,23 +288,27 @@ const QuizPage = () => {
     </div>
   );
 
-  // Language Selection Screen
-  if (view === 'quiz' && !currentLanguage) {
-    // Note: Actually currentLanguage has a default 'en' in Context, so this check might need adjustment or we let them choose if not started
-    // But for now, let's assume if they clicked 'Start' we show language selection if we want to force explicit choice, 
-    // OR we can rely on the default.
-    // Let's force selection if we are in 'quiz' mode but haven't confirmed lang. 
-    // BUT context sets 'en' by default. We might want a 'null' default in context or a separate 'confirmed' state.
-    // For this migration, I'll allow the default 'en' but show the selection screen if they explicitly went to 'quiz' from 'take-quiz' and we want to offer choice.
-    // A better approach: 'take-quiz' view -> Click Start -> Show 'Language Selection' View -> Click Lang -> Set Lang & View 'quiz'.
-    // Let's keep it simple: matches original logic where 'selectedLang' was null.
-  }
-
-  // Adjusted Logic:
-  // We use a local state for 'isLanguageSelected' to simulate the previous flow, or better:
-  // If view is 'language-selection', show it.
-
   if (view === 'language-selection') {
+    const allLangMeta = {
+      en: { code: 'en', nativeName: 'English' },
+      hi: { code: 'hi', nativeName: 'हिंदी' },
+      gu: { code: 'gu', nativeName: 'ગુજરાતી' },
+      ml: { code: 'ml', nativeName: 'മലയാളം' },
+      ta: { code: 'ta', nativeName: 'தமிழ்' },
+      mr: { code: 'mr', nativeName: 'मराठी' },
+      es: { code: 'es', nativeName: 'Español' },
+      fr: { code: 'fr', nativeName: 'Français' },
+    };
+
+    const legacyMap = { english: 'en', hindi: 'hi', gujarati: 'gu', malayalam: 'ml' };
+
+    const rawKeys = quiz
+      ? (quiz.languages || (quiz.content ? Object.keys(quiz.content) : []))
+      : [];
+
+    const quizLangCodes = rawKeys.map(k => legacyMap[k.toLowerCase()] || k.toLowerCase());
+    const quizLanguages = quizLangCodes.map(code => allLangMeta[code] || { code, nativeName: code.toUpperCase() });
+
     return (
       <div className="min-h-screen flex flex-col bg-bg-primary">
         {renderNavbar()}
@@ -364,39 +322,18 @@ const QuizPage = () => {
             <p className="text-text-secondary mb-10">{t('select_lang_msg')}</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {languages
-                .filter(lang => {
-                  // Only show languages that are available in the current quiz
-                  if (!quiz) return true;
-
-                  // Get available keys from quiz content or languages array
-                  let availableKeys = quiz.languages || (quiz.content ? Object.keys(quiz.content) : []);
-
-                  // NORMALIZATION: Map legacy full names to ISO codes to ensure matching works
-                  // This handles cases where quiz data is old ('english') but system uses ('en')
-                  const legacyMap = {
-                    'english': 'en',
-                    'hindi': 'hi',
-                    'gujarati': 'gu',
-                    'malayalam': 'ml'
-                  };
-
-                  const normalizedAvailable = availableKeys.map(k => legacyMap[k.toLowerCase()] || k.toLowerCase());
-
-                  return normalizedAvailable.includes(lang.code.toLowerCase());
-                })
-                .map(lang => (
-                  <button
-                    key={lang.code}
-                    onClick={() => {
-                      setCurrentLanguage(lang.code);
-                      setView('quiz');
-                    }}
-                    className="p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-accent-primary/10 hover:border-accent-primary/50 transition-all text-xl font-semibold active:scale-[0.98]"
-                  >
-                    {lang.nativeName}
-                  </button>
-                ))}
+              {quizLanguages.map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setCurrentLanguage(lang.code);
+                    setView('quiz');
+                  }}
+                  className="p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-accent-primary/10 hover:border-accent-primary/50 transition-all text-xl font-semibold active:scale-[0.98]"
+                >
+                  {lang.nativeName}
+                </button>
+              ))}
             </div>
           </motion.div>
         </div>
@@ -406,10 +343,8 @@ const QuizPage = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden relative">
-      {/* Full Screen Rocket Background */}
       {renderNavbar()}
 
-      {/* Dynamic Full Screen Background - Moved to Root Level */}
       <AnimatePresence>
         {view === 'quiz' && selectedAnswerType === 'In-Charge' && (
           <motion.div
@@ -420,7 +355,6 @@ const QuizPage = () => {
             transition={{ duration: 0.5 }}
             className="absolute inset-0 z-0 bg-black/5"
           >
-            {/* Subtle overlay to ensure text readability */}
             <div className="absolute inset-0 bg-black/10 z-10" />
             <img
               src="/inchargeBackground.jpg"
@@ -455,7 +389,7 @@ const QuizPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-4" // flex-col added for vertical stacking
+            className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-4"
             onClick={handleNext}
           >
             {selectedAnswerType === 'In-Control' ? (
@@ -469,15 +403,18 @@ const QuizPage = () => {
                 className="max-w-full max-h-[70%] object-contain mb-6"
               />
             ) : (
-              <img
-                src="/inCharge.png"
-                alt={selectedAnswerType}
+              <video
+                src="/inChargeMobileVideo.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                ref={(el) => { if (el) el.playbackRate = 2.0; }}
                 className="max-w-full max-h-[70%] object-contain mb-6"
               />
             )}
             <h2
-              className={`text-3xl font-black tracking-widest uppercase py-2 px-6 rounded-lg bg-white/10 backdrop-blur-md mb-8 ${selectedAnswerType === 'In-Charge' ? 'text-green-500' : 'text-red-500'
-                }`}
+              className={`text-3xl font-black tracking-widest uppercase py-2 px-6 rounded-lg bg-white/10 backdrop-blur-md mb-8 ${selectedAnswerType === 'In-Charge' ? 'text-green-500' : 'text-red-500'}`}
             >
               {selectedAnswerType}
             </h2>
@@ -509,13 +446,10 @@ const QuizPage = () => {
                     setView('result');
                     return;
                   }
-
-                  // Go to language selection first
                   setView('language-selection');
                 }}
                 className="w-full md:max-w-[400px] glass-card p-8 cursor-pointer hover:border-blue-500/50 transition-all flex flex-col justify-between group relative overflow-hidden"
               >
-
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex items-center gap-2 text-text-secondary text-sm">
                     <Calendar size={14} />
@@ -598,13 +532,9 @@ const QuizPage = () => {
 
         {view === 'quiz' && quiz && (
           <div className="w-full h-full flex flex-col lg:flex-row overflow-hidden relative z-10">
-
-
-            {/* Content Column */}
             <div className={`w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start p-4 lg:p-10 lg:pl-20 overflow-y-auto transition-all duration-500 relative z-20`}>
               <div className="max-w-xl w-full">
                 <AnimatePresence mode="wait">
-                  {/* ... existing question rendering ... */}
                   {(() => {
                     const langKey = currentLanguage?.toLowerCase();
                     const questions = (quiz.content && langKey && quiz.content[langKey])
@@ -652,7 +582,6 @@ const QuizPage = () => {
                           ))}
                         </div>
 
-                        {/* Animated Toggle Indicator with manual next */}
                         <RoleToggle role={selectedAnswerType} onNext={handleNext} />
 
                       </motion.div>
@@ -677,4 +606,3 @@ const QuizPage = () => {
 };
 
 export default QuizPage;
-

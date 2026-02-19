@@ -172,8 +172,8 @@ const activateQuiz = async (req, res) => {
     const quiz = await Quiz.findById(id);
     if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
 
-    if (quiz.status !== 'DRAFT' && quiz.status !== 'APPROVED' && quiz.status !== 'ACTIVE') {
-      return res.status(400).json({ error: 'Quiz must be DRAFT or APPROVED before activation.' });
+    if (quiz.status !== 'DRAFT' && quiz.status !== 'APPROVED' && quiz.status !== 'ACTIVE' && quiz.status !== 'INACTIVE') {
+      return res.status(400).json({ error: 'Quiz must be DRAFT, APPROVED, or INACTIVE before activation.' });
     }
 
     // Check if another quiz is active for this date

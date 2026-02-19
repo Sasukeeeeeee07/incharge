@@ -4,8 +4,6 @@ import API_BASE_URL from '../config/apiConfig';
 import { RefreshCw, AlertCircle, ChevronLeft } from 'lucide-react';
 
 const UserPerformance = () => {
-  // Debug log to ensure fresh load
-  useEffect(() => { console.log('UserPerformance loaded'); }, []);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

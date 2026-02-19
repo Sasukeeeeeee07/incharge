@@ -123,9 +123,7 @@ const AdminDashboard = () => {
     formData.append('file', file);
 
     try {
-      console.log('Starting import...');
       const res = await axios.post(`${API_BASE_URL}/admin/import`, formData);
-      console.log('Import response:', res.data);
       setImportSummary(res.data);
       setFile(null); // Clear file input
       // Reset file input value manually if needed, or rely on key change
@@ -160,13 +158,9 @@ const AdminDashboard = () => {
 
   const handleManualCreateUsers = async (e) => {
     e.preventDefault();
-    console.log('Frontend: handleManualCreateUsers called');
-    console.log('Frontend: Sending Payload:', newUsers);
-
     setLoading(true);
     try {
       const res = await axios.post(`${API_BASE_URL}/admin/users`, { users: newUsers });
-      console.log('Frontend: Response Received:', res.data);
       setImportSummary(res.data);
       setAddUserModalOpen(false);
       setNewUsers([{ name: '', email: '', mobile: '', company: '' }]);
@@ -200,9 +194,7 @@ const AdminDashboard = () => {
     if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
 
     try {
-      console.log(`Attempting to delete user: ${userId}`);
-      const response = await axios.delete(`${API_BASE_URL}/admin/users/${userId}`);
-      console.log('Delete response:', response);
+      await axios.delete(`${API_BASE_URL}/admin/users/${userId}`);
       setUserEditModalOpen(false);
       fetchUsers();
       setSuccess('User deleted successfully');
@@ -224,7 +216,6 @@ const AdminDashboard = () => {
     if (resetPasswordValue.length < 4) return alert("Password must be at least 4 characters");
 
     try {
-      console.log(`Resetting password for user ${selectedUser._id}`);
       await axios.put(`${API_BASE_URL}/admin/users/${selectedUser._id}/reset-password`, { newPassword: resetPasswordValue });
       setSuccess("Password reset successfully");
       setTimeout(() => setSuccess(''), 6000);

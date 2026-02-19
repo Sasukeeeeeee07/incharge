@@ -198,11 +198,35 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
     }
     setError(null);
 
-    // Basic Client validation
+    // Full client-side validation across all languages
     for (const lang of formData.languages) {
-      if (formData.content[lang].questions.length < 1) {
-        setError(`Language ${lang} must have at least 1 question.`);
+      const langContent = formData.content[lang];
+      const langLabel = availableLanguages.find(l => l.id === lang)?.label || lang.toUpperCase();
+
+      if (!langContent.title?.trim()) {
+        setError(`[${langLabel}] Quiz title is required.`);
+        setActiveLang(lang);
         return;
+      }
+      if (!langContent.questions || langContent.questions.length < 1) {
+        setError(`[${langLabel}] At least 1 question is required.`);
+        setActiveLang(lang);
+        return;
+      }
+      for (let i = 0; i < langContent.questions.length; i++) {
+        const q = langContent.questions[i];
+        if (!q.questionText?.trim()) {
+          setError(`[${langLabel}] Question ${i + 1} text is required.`);
+          setActiveLang(lang);
+          return;
+        }
+        for (let j = 0; j < q.options.length; j++) {
+          if (!q.options[j].text?.trim()) {
+            setError(`[${langLabel}] Question ${i + 1}, Option ${j + 1} text is required.`);
+            setActiveLang(lang);
+            return;
+          }
+        }
       }
     }
 
@@ -364,10 +388,9 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
               type="text"
               value={currentContent.title}
               onChange={(e) => handleContentChange('title', e.target.value)}
-              required
-              disabled={readOnly}
               className="input-base text-lg font-semibold"
               placeholder={`Enter title in ${availableLanguages.find(l => l.id === activeLang)?.label}...`}
+              disabled={readOnly}
             />
           </div>
 
@@ -415,7 +438,6 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
                     value={q.questionText}
                     onChange={(e) => handleQuestionChange(qIdx, 'questionText', e.target.value)}
                     placeholder={`Enter question in ${availableLanguages.find(l => l.id === activeLang)?.label}...`}
-                    required
                     disabled={readOnly}
                     className="input-base flex-1"
                   />
@@ -439,7 +461,6 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
                         value={opt.text}
                         onChange={(e) => handleOptionChange(qIdx, oIdx, 'text', e.target.value)}
                         placeholder={`Option ${oIdx + 1}`}
-                        required
                         disabled={readOnly}
                         className="input-base text-sm"
                       />
