@@ -7,7 +7,7 @@ const createQuiz = async (req, res) => {
     const { title, description, questions, activeDate, languages, content } = req.body;
 
     // Validation
-    const validation = validateQuizStructure({ questions, content, languages });
+    const validation = validateQuizStructure({ questions, content, languages }, true);
     if (!validation.isValid) {
       return res.status(400).json({ error: validation.error });
     }
@@ -64,7 +64,7 @@ const updateQuiz = async (req, res) => {
     if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
 
     // Validate
-    const validation = validateQuizStructure({ questions, content, languages });
+    const validation = validateQuizStructure({ questions, content, languages }, true);
     if (!validation.isValid) {
       return res.status(400).json({ error: validation.error });
     }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../config/apiConfig';
-import { Save, X, Trash2, Plus } from 'lucide-react';
+import { Save, X, Trash2, Plus, Upload } from 'lucide-react';
+import QuizImportModal from './QuizImportModal';
 
 const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
   const [activeLang, setActiveLang] = useState('en');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   // Updated to match database codes (ISO 639-1)
   const availableLanguages = [
@@ -212,7 +214,7 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
         activeDate: formData.activeDate
       };
 
-      if (quiz) {
+      if (quiz && quiz._id) {
         await axios.put(`${API_BASE_URL}/admin/quizzes/${quiz._id}`, payload);
       } else {
         await axios.post(`${API_BASE_URL}/admin/quizzes`, payload);
@@ -258,28 +260,101 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
             )}
           </div>
 
+
+
           {!readOnly && (
-            <button
-              type="button"
-              onClick={() => {
-                const name = prompt("Enter language name (e.g. Hindi, Spanish):");
-                if (name && name.trim()) {
-                  handleAddLanguage(name.trim().toLowerCase());
-                }
-              }}
-              className="btn-secondary py-2 px-4 text-xs font-bold flex items-center gap-2 hover:bg-orange-500/10 hover:text-orange-500 hover:border-orange-500/50 transition-all"
-            >
-              <Plus size={14} /> ADD LANGUAGE
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setImportModalOpen(true)}
+                className="btn-secondary py-2 px-4 text-xs font-bold flex items-center gap-2 hover:bg-orange-500/10 hover:text-orange-500 hover:border-orange-500/50 transition-all"
+              >
+                <Upload size={14} /> IMPORT
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const name = prompt("Enter language name (e.g. Hindi, Spanish):");
+                  if (name && name.trim()) {
+                    const lowerName = name.trim().toLowerCase();
+                    // Map common names to ISO codes
+                    const codeMap = {
+                      'hindi': 'hi',
+                      'gujarati': 'gu',
+                      'malayalam': 'ml',
+                      'english': 'en',
+                      'spanish': 'es',
+                      'french': 'fr'
+                    };
+                    // Use mapped code or fallback to input
+                    // Also check against availableLanguages labels if needed
+                    const langCode = codeMap[lowerName] || lowerName;
+
+                    handleAddLanguage(langCode);
+                  }
+                }}
+                className="btn-secondary py-2 px-4 text-xs font-bold flex items-center gap-2 hover:bg-orange-500/10 hover:text-orange-500 hover:border-orange-500/50 transition-all"
+              >
+                <Plus size={14} /> ADD LANGUAGE
+              </button>
+            </>
           )}
         </div>
       </div>
 
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-error rounded-xl mb-6">
-          {error}
-        </div>
-      )}
+      {/* Local Import Modal for Active Language */}
+      <QuizImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImport={(questions) => {
+          const updatedContent = { ...formData.content };
+          updatedContent[activeLang] = {
+            ...updatedContent[activeLang],
+            questions: questions
+          };
+          // We might want to sync question count across languages or just allow per-lang divergence?
+          // The current architecture seems to assume symmetric question counts for valid switching?
+          // Actually createEmptyQuestion relies on index. 
+          // If we import for one language, other languages might be out of sync.
+          // Ideally, imports should probably set the structure for ALL languages if it's the first import,
+          // or we just update the text for this language if structure matches?
+
+          // For now, let's just update the current language's questions. 
+          // If this causes length mismatch, the UI handles it by just mapping what exists.
+          // But `handleAddQuestion` adds to ALL languages.
+          // If we import 10 questions for English, Hindi still has 2.
+          // We should probably resize other languages to match the length of the imported one?
+
+          const newLength = questions.length;
+          formData.languages.forEach(lang => {
+            if (lang !== activeLang) {
+              // Resize this language's questions array
+              const currentQs = updatedContent[lang].questions;
+              if (currentQs.length < newLength) {
+                // Add empty questions
+                const needed = newLength - currentQs.length;
+                for (let i = 0; i < needed; i++) {
+                  currentQs.push(createEmptyQuestion(currentQs.length));
+                }
+              } else if (currentQs.length > newLength) {
+                // Trim
+                updatedContent[lang].questions = currentQs.slice(0, newLength);
+              }
+            }
+          });
+
+          setFormData({ ...formData, content: updatedContent });
+          setImportModalOpen(false);
+        }}
+      />
+
+      {
+        error && (
+          <div className="p-4 bg-red-500/10 border border-red-500/20 text-error rounded-xl mb-6">
+            {error}
+          </div>
+        )
+      }
 
       <form onSubmit={handleSubmit}>
         <fieldset disabled={readOnly} className="border-none p-0 m-0 disabled:opacity-80">
@@ -417,7 +492,7 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
           )}
         </div>
       </form>
-    </div>
+    </div >
   );
 };
 

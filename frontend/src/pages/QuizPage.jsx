@@ -458,11 +458,23 @@ const QuizPage = () => {
             className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-4" // flex-col added for vertical stacking
             onClick={handleNext}
           >
-            <img
-              src={selectedAnswerType === 'In-Charge' ? '/inCharge.png' : '/inControl.png'}
-              alt={selectedAnswerType}
-              className="max-w-full max-h-[70%] object-contain mb-6" // Restrict height to leave room for text
-            />
+            {selectedAnswerType === 'In-Control' ? (
+              <video
+                src="/inControlMobileVideo.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                ref={(el) => { if (el) el.playbackRate = 2.0; }}
+                className="max-w-full max-h-[70%] object-contain mb-6"
+              />
+            ) : (
+              <img
+                src="/inCharge.png"
+                alt={selectedAnswerType}
+                className="max-w-full max-h-[70%] object-contain mb-6"
+              />
+            )}
             <h2
               className={`text-3xl font-black tracking-widest uppercase py-2 px-6 rounded-lg bg-white/10 backdrop-blur-md mb-8 ${selectedAnswerType === 'In-Charge' ? 'text-green-500' : 'text-red-500'
                 }`}
@@ -475,15 +487,15 @@ const QuizPage = () => {
                 e.stopPropagation();
                 handleNext();
               }}
-              className="px-8 py-3 bg-white text-black font-bold text-lg rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group"
+              className="px-6 py-2 bg-white text-black font-bold text-base rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group"
             >
-              Next <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              Next <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <main className="flex-1 p-4 md:p-6 lg:pt-8 flex flex-col items-center max-w-7xl mx-auto w-full overflow-hidden justify-start relative z-10">
+      <main className="flex-1 p-4 md:p-6 lg:pt-8 flex flex-col items-center max-w-7xl mx-auto w-full overflow-y-auto justify-start relative z-10">
 
         {view === 'take-quiz' && quiz && (
           <div className="w-full">

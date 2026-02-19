@@ -7,7 +7,7 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
   const questions = quizData.content?.[langKey]?.questions || quizData.questions || [];
 
   return (
-    <div className="flex-1 flex flex-col justify-center lg:justify-start items-center w-full py-2 lg:pt-6 min-h-0">
+    <div className="flex-1 flex flex-col justify-start items-center w-full py-2 pt-20 lg:pt-6 min-h-0">
       <h1 className="text-4xl md:text-5xl font-bold mb-1 lg:mb-2 text-center">Result: {result.result}</h1>
       <p className="text-text-secondary mb-3 lg:mb-6 text-sm md:text-base text-center">Thank you for participating!</p>
 
