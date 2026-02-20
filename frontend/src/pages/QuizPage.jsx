@@ -55,6 +55,12 @@ const QuizPage = () => {
   const audioRef = React.useRef(null);
   const audioTimeoutRef = React.useRef(null);
 
+  // Preloaded video refs — loaded hidden on mount so they're buffered before needed
+  const webChargeVideoRef = React.useRef(null);
+  const webControlVideoRef = React.useRef(null);
+  const mobileChargeVideoRef = React.useRef(null);
+  const mobileControlVideoRef = React.useRef(null);
+
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
@@ -345,6 +351,38 @@ const QuizPage = () => {
     <div className="h-screen flex flex-col overflow-hidden relative">
       {renderNavbar()}
 
+      {/* Hidden preload videos — load into browser memory immediately so playback is instant */}
+      <div style={{ display: 'none' }} aria-hidden="true">
+        <video
+          ref={webChargeVideoRef}
+          src="/inChargeWebVideo.mp4"
+          muted
+          playsInline
+          preload="auto"
+        />
+        <video
+          ref={webControlVideoRef}
+          src="/inControlWebVideo.mp4"
+          muted
+          playsInline
+          preload="auto"
+        />
+        <video
+          ref={mobileChargeVideoRef}
+          src="/inChargeMobileVideo.mp4"
+          muted
+          playsInline
+          preload="auto"
+        />
+        <video
+          ref={mobileControlVideoRef}
+          src="/inControlMobileVideo.mp4"
+          muted
+          playsInline
+          preload="auto"
+        />
+      </div>
+
       <AnimatePresence>
         {view === 'quiz' && selectedAnswerType === 'In-Charge' && (
           <motion.div
@@ -352,7 +390,7 @@ const QuizPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.15 }}
             className="absolute inset-0 z-0"
           >
             <div className="absolute inset-0 bg-black/20 z-10" />
@@ -362,6 +400,7 @@ const QuizPage = () => {
               loop
               muted
               playsInline
+              preload="auto"
               ref={(el) => { if (el) el.playbackRate = 2.0; }}
               className="w-full h-full object-cover object-center"
             />
@@ -373,7 +412,7 @@ const QuizPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.15 }}
             className="absolute inset-0 z-0"
           >
             <div className="absolute inset-0 bg-black/20 z-10" />
@@ -383,6 +422,7 @@ const QuizPage = () => {
               loop
               muted
               playsInline
+              preload="auto"
               ref={(el) => { if (el) el.playbackRate = 2.0; }}
               className="w-full h-full object-cover object-center"
             />
@@ -403,7 +443,7 @@ const QuizPage = () => {
             className="fixed inset-0 z-[100] flex flex-col items-center justify-end overflow-hidden"
             onClick={handleNext}
           >
-            {/* Video fills the full screen */}
+            {/* Video fills the full screen — preloaded so starts instantly */}
             {selectedAnswerType === 'In-Control' ? (
               <video
                 src="/inControlMobileVideo.mp4"
@@ -411,6 +451,7 @@ const QuizPage = () => {
                 loop
                 muted
                 playsInline
+                preload="auto"
                 ref={(el) => { if (el) el.playbackRate = 2.0; }}
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ objectPosition: '35% center' }}
@@ -422,6 +463,7 @@ const QuizPage = () => {
                 loop
                 muted
                 playsInline
+                preload="auto"
                 ref={(el) => { if (el) el.playbackRate = 2.0; }}
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ objectPosition: '65% center' }}
@@ -521,7 +563,7 @@ const QuizPage = () => {
             </div>
             <div className="w-full flex-1 flex flex-col items-center pt-14 lg:pt-0">
               <QuizResultView
-                result={{ result: selectedHistoryQuiz.result }}
+                result={{ result: selectedHistoryQuiz.result, score: selectedHistoryQuiz.score }}
                 responses={selectedHistoryQuiz.responses}
                 quizData={{
                   content: selectedHistoryQuiz.quizContent,
