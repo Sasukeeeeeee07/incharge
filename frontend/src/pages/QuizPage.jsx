@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../config/apiConfig';
 import QuizHistory from '../components/QuizHistory';
@@ -10,33 +10,33 @@ import { useNavigate } from 'react-router-dom';
 import { LogOut, UserCircle, History, PlayCircle, Calendar, ChevronRight } from 'lucide-react';
 import RoleToggle from '../components/RoleToggle';
 
-const useWindowSize = () => {
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
+// Debounced isMobile — only re-renders once resize settles, not on every pixel
+const useIsMobile = (breakpoint = 1024) => {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        setIsMobile(window.innerWidth < breakpoint);
+      }, 150);
     };
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timerRef.current);
+    };
+  }, [breakpoint]);
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return windowSize;
+  return isMobile;
 };
 
 const QuizPage = () => {
   const { logout, user } = useAuth();
   const { t, currentLanguage, setCurrentLanguage } = useLanguage();
   const navigate = useNavigate();
-  const { width } = useWindowSize();
-  const isMobile = width < 1024;
+  const isMobile = useIsMobile();
 
   const [quiz, setQuiz] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -353,12 +353,16 @@ const QuizPage = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 z-0 bg-black/5"
+            className="absolute inset-0 z-0"
           >
-            <div className="absolute inset-0 bg-black/10 z-10" />
-            <img
-              src="/inchargeBackground.jpg"
-              alt="In Charge Background"
+            <div className="absolute inset-0 bg-black/20 z-10" />
+            <video
+              src="/inChargeWebVideo.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              ref={(el) => { if (el) el.playbackRate = 2.0; }}
               className="w-full h-full object-cover object-center"
             />
           </motion.div>
@@ -370,13 +374,17 @@ const QuizPage = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 z-0 bg-black/5"
+            className="absolute inset-0 z-0"
           >
-            <div className="absolute inset-0 bg-black/10 z-10" />
-            <img
-              src="/incontrolBackground.jpg"
-              alt="In Control Background"
-              className="w-full h-full object-cover object-right-top"
+            <div className="absolute inset-0 bg-black/20 z-10" />
+            <video
+              src="/inControlWebVideo.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              ref={(el) => { if (el) el.playbackRate = 2.0; }}
+              className="w-full h-full object-cover object-center"
             />
           </motion.div>
         )}
@@ -389,9 +397,13 @@ const QuizPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-4"
+            style={{
+              backgroundColor: selectedAnswerType === 'In-Charge' ? '#e8f4f8' : '#000000'
+            }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-end overflow-hidden"
             onClick={handleNext}
           >
+            {/* Video fills the full screen */}
             {selectedAnswerType === 'In-Control' ? (
               <video
                 src="/inControlMobileVideo.mp4"
@@ -400,7 +412,8 @@ const QuizPage = () => {
                 muted
                 playsInline
                 ref={(el) => { if (el) el.playbackRate = 2.0; }}
-                className="max-w-full max-h-[70%] object-contain mb-6"
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: '35% center' }}
               />
             ) : (
               <video
@@ -410,24 +423,32 @@ const QuizPage = () => {
                 muted
                 playsInline
                 ref={(el) => { if (el) el.playbackRate = 2.0; }}
-                className="max-w-full max-h-[70%] object-contain mb-6"
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: '65% center' }}
               />
             )}
-            <h2
-              className={`text-3xl font-black tracking-widest uppercase py-2 px-6 rounded-lg bg-white/10 backdrop-blur-md mb-8 ${selectedAnswerType === 'In-Charge' ? 'text-green-500' : 'text-red-500'}`}
-            >
-              {selectedAnswerType}
-            </h2>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNext();
-              }}
-              className="px-6 py-2 bg-white text-black font-bold text-base rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group"
-            >
-              Next <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </button>
+            {/* Floating UI on top of the video */}
+            <div className="relative z-10 flex flex-col items-center gap-4 pb-12 pointer-events-none">
+              <h2
+                className={`text-3xl font-black tracking-widest uppercase py-2 px-6 rounded-lg ${selectedAnswerType === 'In-Charge'
+                  ? 'text-green-700 bg-white/60'
+                  : 'text-white bg-black/50'
+                  } backdrop-blur-md`}
+              >
+                {selectedAnswerType}
+              </h2>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+                className="pointer-events-auto px-8 py-3 bg-white/90 text-gray-900 font-bold text-base rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center gap-2 group"
+              >
+                Next <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
