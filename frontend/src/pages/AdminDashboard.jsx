@@ -210,6 +210,19 @@ const AdminDashboard = () => {
 
   const [resetPasswordModalOpen, setResetPasswordModalOpen] = useState(false);
   const [resetPasswordValue, setResetPasswordValue] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navItems = [
+    { key: 'analytics', label: 'Analytics', icon: <BarChart2 size={20} /> },
+    { key: 'performance', label: 'User Performance', icon: <TrendingUp size={20} /> },
+    { key: 'users', label: 'Users', icon: <Users size={20} /> },
+    { key: 'quiz', label: 'Quizzes', icon: <List size={20} /> },
+  ];
+
+  const handleNavClick = (tab) => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+  };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -229,58 +242,92 @@ const AdminDashboard = () => {
   };
 
   const renderNavbar = () => (
-    <header className="px-4 md:px-10 py-3 md:py-5 flex justify-between items-center border-b border-blue-200/10 bg-blue-900/50 backdrop-blur-md sticky top-0 z-40">
-      <div
-        className="cursor-pointer flex items-center"
-        onClick={() => setActiveTab('analytics')}
-      >
-        <img
-          src="/smmart_Logo.png"
-          alt="Smmart Logo"
-          className="h-8 md:h-12 w-auto object-contain transition-transform hover:scale-105"
-        />
-      </div>
+    <>
+      <header className="px-4 md:px-10 py-3 md:py-5 flex justify-between items-center border-b border-blue-200/10 bg-blue-900/50 backdrop-blur-md sticky top-0 z-40">
+        {/* Logo */}
+        <div className="cursor-pointer flex items-center" onClick={() => handleNavClick('analytics')}>
+          <img src="/smmart_Logo.png" alt="Smmart Logo" className="h-8 md:h-12 w-auto object-contain transition-transform hover:scale-105" />
+        </div>
 
-      <div className="flex items-center gap-2 md:gap-5 overflow-x-auto no-scrollbar mask-gradient pr-2">
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-5">
+          {navItems.map(item => (
+            <button
+              key={item.key}
+              onClick={() => handleNavClick(item.key)}
+              className={`flex items-center gap-2 px-3 py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === item.key ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'
+                }`}
+            >
+              {item.icon} {item.label}
+            </button>
+          ))}
+          <div className="w-px h-6 bg-white/10 mx-1" />
+          <button onClick={() => navigate('/profile')} className="flex items-center gap-2 px-3 py-3 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5">
+            <UserCircle size={20} /> Profile
+          </button>
+          <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-3 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-red-900">
+            <LogOut size={20} /> Logout
+          </button>
+        </div>
+
+        {/* Mobile: hamburger button */}
         <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'analytics' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+          className="md:hidden flex flex-col justify-center items-center w-10 h-10 gap-1.5 rounded-lg hover:bg-white/10 transition-colors"
+          onClick={() => setMobileMenuOpen(prev => !prev)}
+          aria-label="Toggle menu"
         >
-          <BarChart2 size={18} /> <span className="hidden sm:inline">Analytics</span>
+          <span className={`block w-6 h-0.5 bg-white transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`} />
+          <span className={`block w-6 h-0.5 bg-white transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : ''}`} />
+          <span className={`block w-6 h-0.5 bg-white transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
         </button>
+      </header>
 
-        <button
-          onClick={() => setActiveTab('performance')}
-          className={`flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'performance' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
-        >
-          <TrendingUp size={18} /> <span className="hidden sm:inline">User Performance</span>
-        </button>
+      {/* Mobile drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-30 flex flex-col" onClick={() => setMobileMenuOpen(false)}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'users' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
-        >
-          <Users size={18} /> <span className="hidden sm:inline">Users</span>
-        </button>
+          {/* Drawer panel — slides from top under the navbar */}
+          <div
+            className="relative mt-[56px] bg-blue-950/95 border-b border-blue-200/10 shadow-2xl w-full"
+            onClick={e => e.stopPropagation()}
+          >
+            <nav className="flex flex-col divide-y divide-white/[0.06]">
+              {navItems.map(item => (
+                <button
+                  key={item.key}
+                  onClick={() => handleNavClick(item.key)}
+                  className={`flex items-center gap-4 px-6 py-4 text-left transition-colors w-full ${activeTab === item.key
+                      ? 'bg-accent-primary/15 text-accent-primary'
+                      : 'text-text-secondary hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                  {item.icon}
+                  <span className="font-medium text-base">{item.label}</span>
+                  {activeTab === item.key && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent-primary" />}
+                </button>
+              ))}
 
-        <button
-          onClick={() => setActiveTab('quiz')}
-          className={`flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'quiz' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
-        >
-          <List size={18} /> <span className="hidden sm:inline">Quizzes</span>
-        </button>
-
-        <div className="w-px h-6 bg-white/10 mx-1 hidden sm:block"></div>
-
-        <button onClick={() => navigate('/profile')} className="flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5 whitespace-nowrap">
-          <UserCircle size={18} /> <span className="hidden sm:inline">Profile</span>
-        </button>
-
-        <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2 md:py-3 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-red-900 whitespace-nowrap">
-          <LogOut size={18} /> <span className="hidden sm:inline">Logout</span>
-        </button>
-      </div>
-    </header>
+              <div className="flex gap-2 px-4 py-4">
+                <button
+                  onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-text-secondary hover:text-white font-medium"
+                >
+                  <UserCircle size={18} /> Profile
+                </button>
+                <button
+                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-colors text-red-400 hover:text-red-300 font-medium"
+                >
+                  <LogOut size={18} /> Logout
+                </button>
+              </div>
+            </nav>
+          </div>
+        </div>
+      )}
+    </>
   );
 
   return (
@@ -670,19 +717,19 @@ const AdminDashboard = () => {
 
         {activeTab === 'quiz' && (
           <div className="w-full">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
               <h1 className="text-3xl font-bold">Quiz Management</h1>
               {quizView === 'list' && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => setQuizImportModalOpen(true)}
-                    className="btn-secondary flex items-center gap-2"
+                    className="btn-secondary flex-1 sm:flex-none justify-center flex items-center gap-2"
                   >
                     <Upload size={18} /> Import Questions
                   </button>
                   <button
                     onClick={handleCreateQuiz}
-                    className="btn-primary"
+                    className="btn-primary flex-1 sm:flex-none justify-center"
                   >
                     <Plus size={18} /> Create Quiz
                   </button>

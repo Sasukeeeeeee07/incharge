@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../config/apiConfig';
 import { RefreshCw, AlertCircle, ChevronLeft } from 'lucide-react';
 
-const UserPerformance = () => {
+const UserPerformance = memo(() => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -419,6 +419,6 @@ const UserPerformance = () => {
       )}
     </div>
   );
-};
+});
 
 export default UserPerformance;
