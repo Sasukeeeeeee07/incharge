@@ -254,17 +254,19 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
   const currentContent = formData.content[activeLang] || { title: '', description: '', questions: [] };
 
   return (
-    <div className="glass-card p-8 max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+    <div className="glass-card p-4 sm:p-8 max-w-5xl mx-auto">
+      <div className="flex flex-col justify-between items-start mb-8 gap-4">
         <h2 className="text-2xl font-bold">{readOnly ? 'View Quiz' : (quiz ? 'Edit Quiz' : 'Create New Quiz')}</h2>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-            <span className="text-xs font-bold text-text-secondary mr-3 tracking-wider">ACTIVE LANGUAGE:</span>
+        {/* Language toolbar */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', width: '100%' }}>
+          {/* Row 1: Language selector */}
+          <div className="flex items-center bg-white/5 px-3 py-2 rounded-xl border border-white/10">
+            <span className="text-xs font-bold text-text-secondary mr-2 tracking-wider whitespace-nowrap">LANG:</span>
             <select
               value={activeLang}
               onChange={(e) => setActiveLang(e.target.value)}
-              className="bg-transparent text-sm font-bold text-orange-500 outline-none cursor-pointer focus:ring-0 mr-2"
+              className="bg-transparent text-sm font-bold text-orange-500 outline-none cursor-pointer focus:ring-0 flex-1 mr-2"
             >
               {formData.languages.map(lang => (
                 <option key={lang} value={lang} className="bg-bg-secondary">
@@ -276,7 +278,7 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
               <button
                 type="button"
                 onClick={() => handleRemoveLanguage(activeLang)}
-                className="text-text-secondary hover:text-error transition-colors ml-1 p-1"
+                className="text-text-secondary hover:text-error transition-colors p-1 flex-shrink-0"
                 title="Delete this language version"
               >
                 <Trash2 size={16} />
@@ -284,44 +286,31 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
             )}
           </div>
 
-
-
+          {/* Row 2: Action buttons — always two equal columns */}
           {!readOnly && (
-            <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <button
                 type="button"
                 onClick={() => setImportModalOpen(true)}
-                className="btn-secondary py-2 px-4 text-xs font-bold flex items-center gap-2 hover:bg-orange-500/10 hover:text-orange-500 hover:border-orange-500/50 transition-all"
+                className="btn-secondary py-2 px-3 text-xs font-bold justify-center"
               >
-                <Upload size={14} /> IMPORT
+                <Upload size={13} /> IMPORT
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  const name = prompt("Enter language name (e.g. Hindi, Spanish):");
+                  const name = prompt('Enter language name (e.g. Hindi, Spanish):');
                   if (name && name.trim()) {
                     const lowerName = name.trim().toLowerCase();
-                    // Map common names to ISO codes
-                    const codeMap = {
-                      'hindi': 'hi',
-                      'gujarati': 'gu',
-                      'malayalam': 'ml',
-                      'english': 'en',
-                      'spanish': 'es',
-                      'french': 'fr'
-                    };
-                    // Use mapped code or fallback to input
-                    // Also check against availableLanguages labels if needed
-                    const langCode = codeMap[lowerName] || lowerName;
-
-                    handleAddLanguage(langCode);
+                    const codeMap = { hindi: 'hi', gujarati: 'gu', malayalam: 'ml', english: 'en', spanish: 'es', french: 'fr' };
+                    handleAddLanguage(codeMap[lowerName] || lowerName);
                   }
                 }}
-                className="btn-secondary py-2 px-4 text-xs font-bold flex items-center gap-2 hover:bg-orange-500/10 hover:text-orange-500 hover:border-orange-500/50 transition-all"
+                className="btn-secondary py-2 px-3 text-xs font-bold justify-center"
               >
-                <Plus size={14} /> ADD LANGUAGE
+                <Plus size={13} /> ADD LANG
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -492,11 +481,11 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
           )}
         </fieldset>
 
-        <div className="mt-8 flex gap-4 justify-end">
+        <div className="mt-8 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2.5 rounded-xl border border-text-secondary/30 text-text-secondary hover:text-white hover:bg-white/5 transition-colors"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-text-secondary/30 text-text-secondary hover:text-white hover:bg-white/5 transition-colors text-center"
           >
             {readOnly ? 'Close' : 'Cancel'}
           </button>
@@ -505,7 +494,7 @@ const QuizEditor = ({ quiz, onSave, onCancel, readOnly = false }) => {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary"
+              className="btn-primary w-full sm:w-auto justify-center"
             >
               <Save size={18} />
               {loading ? 'Saving...' : 'Save Quiz'}

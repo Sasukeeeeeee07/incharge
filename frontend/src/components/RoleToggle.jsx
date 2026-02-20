@@ -8,13 +8,16 @@ const RoleToggle = ({ role, onNext }) => {
   const isControl = role === 'In-Control';
   const isActive = isCharge || isControl;
 
-  // Configuration
-  const containerWidth = 360; // Increased length
-  const dotSize = 70;
-  const padding = 6; // slightly more padding for premium feel
+  // Configuration — responsive sizes
+  const dotSize = 58;
+  const padding = 5;
+  const trackHeight = 70;
 
-  // Calculate positions
-  const maxMove = containerWidth - dotSize - (padding * 2);
+  // Fit within mobile screen (viewport - card padding ~48px), max 320px
+  const containerWidth = Math.min(typeof window !== 'undefined' ? window.innerWidth - 48 : 320, 320);
+
+  // Calculate dot positions
+  const maxMove = containerWidth - dotSize - padding * 2;
   const centerPos = maxMove / 2;
 
   // Dynamic Shadow for container only
@@ -35,7 +38,7 @@ const RoleToggle = ({ role, onNext }) => {
             ease: "easeInOut",
             scale: { repeat: isActive ? Infinity : 0, duration: 1.5, repeatType: "reverse" }
           }}
-          style={{ width: containerWidth, height: 80 + padding }}
+          style={{ width: containerWidth, height: trackHeight + padding }}
           className="rounded-full flex items-center relative overflow-hidden border-4 border-white/5"
         >
           {/* Images inside the toggle track */}
