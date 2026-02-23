@@ -1,6 +1,6 @@
 import React from 'react';
 import Speedometer from './Speedometer';
-import { motion } from 'framer-motion';
+import { CheckCircle2, XCircle } from 'lucide-react';
 
 const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails, setShowDetails, currentStep, totalSteps, hideToggle = false }) => {
   const langKey = selectedLang?.toLowerCase();
@@ -11,7 +11,7 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
       <h1 className="text-4xl md:text-5xl font-bold mb-1 lg:mb-2 text-center">Result: {result.result}</h1>
       <p className="text-text-secondary mb-3 lg:mb-6 text-sm md:text-base text-center">Thank you for participating!</p>
 
-      {/* Toggle button - positioned right after thank you text */}
+      {/* Toggle button */}
       {!hideToggle && (
         <button
           onClick={() => setShowDetails(!showDetails)}
@@ -21,31 +21,58 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
         </button>
       )}
 
-      {/* Conditional rendering: either speedometer OR detailed results */}
       <div className="w-full flex-1 flex flex-col items-center justify-center lg:justify-start">
         {showDetails ? (
-          /* Detailed results view */
-          <div className="glass-card w-full max-w-3xl max-h-[50vh] overflow-y-auto text-left p-0 shadow-lg">
+          /* Detailed results */
+          <div className="glass-card w-full max-w-3xl max-h-[55vh] overflow-y-auto text-left p-0 shadow-lg">
             {questions.map((q, idx) => {
               const response = responses.find(r => r.questionId === q._id);
-              const selectedOption = q.options?.find(opt => opt.answerType === response?.answerType);
+              const userAnswerType = response?.answerType;
+              const isCorrect = userAnswerType === 'In-Charge';
+
+              // The option the user selected
+              const selectedOption = q.options?.find(opt => opt.answerType === userAnswerType);
+              // The correct option is always In-Charge
+              const correctOption = q.options?.find(opt => opt.answerType === 'In-Charge');
+
               return (
-                <div key={idx} className="p-4 border-b border-glass-border flex justify-between items-center gap-4 hover:bg-white/[0.02]">
-                  <div className="flex-1">
-                    <p className="text-xs text-text-secondary mb-0.5">Question {idx + 1}</p>
-                    <p className="font-medium text-sm md:text-base">{q.questionText}</p>
-                    <p className="text-xs mt-0.5 text-accent-primary italic">
-                      Selected: "{selectedOption?.text || 'N/A'}"
-                    </p>
+                <div key={idx} className="p-4 border-b border-glass-border hover:bg-white/[0.02]">
+                  {/* Question */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-xs text-text-secondary mb-0.5">Question {idx + 1}</p>
+                      <p className="font-medium text-sm md:text-base">{q.questionText}</p>
+                    </div>
+                    {/* Correct / Wrong badge */}
+                    <div className={`shrink-0 px-3 py-1 rounded-full text-xs font-bold text-center min-w-[70px]
+                      ${isCorrect ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {isCorrect ? '✓ Correct' : '✗ Wrong'}
+                    </div>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-semibold text-center min-w-[90px] 
-                    ${response?.answerType === 'In-Charge'
-                      ? 'bg-orange-500/20 text-orange-400'
-                      : response?.answerType === 'In-Control'
-                        ? 'bg-blue-500/20 text-blue-400'
-                        : 'bg-white/10 text-text-secondary'
-                    }`}>
-                    {response?.answerType}
+
+                  {/* Your answer */}
+                  <div className="flex flex-col gap-2">
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm
+                      ${isCorrect
+                        ? 'bg-green-500/15 border border-green-500/40'
+                        : 'bg-red-500/15 border border-red-500/40'
+                      }`}>
+                      {isCorrect
+                        ? <CheckCircle2 size={14} className="shrink-0 text-green-400" />
+                        : <XCircle size={14} className="shrink-0 text-red-400" />
+                      }
+                      <span className="text-xs text-text-secondary mr-1 shrink-0">Your answer:</span>
+                      <span className="font-semibold text-xs">{selectedOption?.text || 'N/A'}</span>
+                    </div>
+
+                    {/* Show correct answer only if the user got it wrong */}
+                    {!isCorrect && correctOption && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-green-500/10 border border-green-500/30">
+                        <CheckCircle2 size={14} className="shrink-0 text-green-400" />
+                        <span className="text-xs text-text-secondary mr-1 shrink-0">Correct answer:</span>
+                        <span className="font-semibold text-xs text-green-300">{correctOption.text}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
