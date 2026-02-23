@@ -35,21 +35,32 @@ const QuizImportModal = ({ isOpen, onClose, onImport }) => {
             // Detect Option: Starts with letter A-D followed by dot
             else if (currentQuestion && trimmedLine.match(/^[A-D]\.\s+/)) {
                 let optionText = trimmedLine;
-                let score = 0;
+                let score = null;
+                let type = null;
 
-                // Support separators: em dash (\u2013 –), en dash (\u2014 —), or regular hyphen (-)
-                // Match a score number at the very end of the line after any of these separators
-                const scoreMatch = optionText.match(/(.*)[\-\u2013\u2014]\s*(\d+)\s*$/);
-                if (scoreMatch) {
-                    score = parseInt(scoreMatch[2], 10);
-                    optionText = scoreMatch[1].trim();
+                // --- Format 1: Direct answerType text at end (e.g. "- In Charge" or "– In Control") ---
+                // Matches: "... - In Charge", "... – In Control", "... -In-Charge", etc.
+                const directTypeMatch = optionText.match(/(.*)[\-\u2013\u2014]\s*(in[\s\-]?charge|in[\s\-]?control)\s*$/i);
+                if (directTypeMatch) {
+                    const rawType = directTypeMatch[2].toLowerCase().replace(/[\s\-]/g, '');
+                    type = rawType === 'incharge' ? 'In-Charge' : 'In-Control';
+                    optionText = directTypeMatch[1].trim();
+                } else {
+                    // --- Format 2: Numeric score at end (e.g. "– 9", "- 3") ---
+                    // score > 7 → In-Charge, otherwise → In-Control
+                    const scoreMatch = optionText.match(/(.*)[\-\u2013\u2014]\s*(\d+)\s*$/);
+                    if (scoreMatch) {
+                        score = parseInt(scoreMatch[2], 10);
+                        type = score > 7 ? 'In-Charge' : 'In-Control';
+                        optionText = scoreMatch[1].trim();
+                    } else {
+                        // No recognised pattern — default to In-Control, user can fix in review
+                        type = 'In-Control';
+                    }
                 }
 
                 // Remove option prefix (A. B. C. D.)
                 optionText = optionText.replace(/^[A-D]\.\s+/, '').trim();
-
-                // Score > 7 → In-Charge, otherwise → In-Control
-                const type = score > 7 ? 'In-Charge' : 'In-Control';
 
                 currentQuestion.options.push({
                     text: optionText,
@@ -95,17 +106,27 @@ const QuizImportModal = ({ isOpen, onClose, onImport }) => {
                 {step === 1 ? (
                     <div className="flex-1 flex flex-col min-h-0">
                         <p className="text-text-secondary mb-4 text-sm">
-                            Paste your question text below. Each option must end with a score number after a dash or em dash.<br />
-                            <code className="text-orange-400">1. Question text here</code><br />
-                            <code className="text-orange-400">A. Option text – 9</code>&nbsp;&nbsp;<span className="opacity-50">(score &gt; 7 → In-Charge, ≤ 7 → In-Control)</span>
+                            Paste your questions below. Two formats are supported — they can even be mixed in the same paste:<br />
+                            <span className="text-white/60 text-xs block mt-1 mb-0.5">Format 1 — Direct type label:</span>
+                            <code className="text-orange-400">A. Option text – In Charge</code>&nbsp;&nbsp;<span className="opacity-50 text-xs">(or "In Control")</span><br />
+                            <span className="text-white/60 text-xs block mt-1 mb-0.5">Format 2 — Numeric score:</span>
+                            <code className="text-orange-400">A. Option text – 9</code>&nbsp;&nbsp;<span className="opacity-50 text-xs">(score &gt; 7 → In-Charge, ≤ 7 → In-Control)</span>
                         </p>
                         <textarea
                             className="flex-1 input-base resize-none font-mono text-xs custom-scrollbar"
-                            placeholder={`1. Question text here
-A. Option text – 0
-B. Option text – 4
-C. Option text – 9
-D. Option text – 2`}
+                            placeholder={`Format 1 (direct label):
+1. Question text here
+A. Option text – In Control
+B. Option text – In Charge
+C. Option text – In Control
+D. Option text – In Charge
+
+Format 2 (numeric score):
+1. Question text here
+A. Option text – 2
+B. Option text – 9
+C. Option text – 4
+D. Option text – 8`}
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                         />
@@ -129,7 +150,7 @@ D. Option text – 2`}
                         )}
                         <div className="flex justify-between items-center mb-4">
                             <div className="text-sm text-text-secondary">
-                                Found {parsedQuestions.length} questions. Score &gt; 7 → <span className="text-green-400 font-bold">In-Charge</span>, ≤ 7 → <span className="text-red-400 font-bold">In-Control</span>. Review below.
+                                Found {parsedQuestions.length} questions. Review and adjust types below if needed.
                             </div>
                             <div className="flex gap-2">
                                 <button
@@ -160,7 +181,9 @@ D. Option text – 2`}
                                                 <div className="flex-1 flex justify-between items-center bg-black/20 p-2 rounded">
                                                     <span className="truncate mr-2" title={opt.text}>{opt.text}</span>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-white/30 text-[10px] w-6 text-center">({opt.originalScore})</span>
+                                                        {opt.originalScore !== null && opt.originalScore !== undefined && (
+                                                            <span className="text-white/30 text-[10px] w-6 text-center">({opt.originalScore})</span>
+                                                        )}
                                                         <select
                                                             value={opt.answerType}
                                                             onChange={(e) => handleTypeChange(qIdx, oIdx, e.target.value)}
