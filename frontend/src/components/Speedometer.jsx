@@ -84,7 +84,7 @@ const Speedometer = ({ result, score }) => {
         <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-red-500/20 blur-[60px] rounded-full pointer-events-none" />
 
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold uppercase tracking-widest text-text-secondary mb-2">InCharge OR InControl</h2>
+          <h2 className="text-2xl font-bold uppercase tracking-widest text-text-secondary mb-2">In-Charge OR In-Control</h2>
           <div className={`text-4xl sm:text-5xl font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-r ${result === 'In-Control' ? 'from-blue-700 to-blue-500' : result === 'In-Charge' ? 'from-red-400 to-red-200' : 'from-slate-300 via-white to-slate-300'}`}>
             {result}
           </div>
@@ -124,7 +124,7 @@ const Speedometer = ({ result, score }) => {
           transition={{ delay: 1.2, duration: 0.5 }}
           className="text-center mt-6 text-base sm:text-lg font-medium text-text-secondary"
         >
-          Today you are{' '}
+          Today you were{' '}
           <span className="text-red-400 font-black text-xl sm:text-2xl">
             {total > 0 ? Math.round((charge / total) * 100) : 0}%
           </span>

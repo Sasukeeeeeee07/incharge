@@ -156,14 +156,10 @@ const QuizPage = () => {
         }
 
         const audio = new Audio(audioFile);
+        audio.loop = true;
         audioRef.current = audio;
 
         audio.play().catch(err => console.error("Audio playback error:", err));
-
-        audioTimeoutRef.current = setTimeout(() => {
-          audio.pause();
-          audio.currentTime = 0;
-        }, 5000);
       } catch (e) {
         console.error("Failed to setup audio:", e);
       }
@@ -200,6 +196,15 @@ const QuizPage = () => {
     const questions = (quiz.content && langKey && quiz.content[langKey])
       ? quiz.content[langKey].questions
       : (quiz.questions || []);
+
+    // Stop audio when user clicks Next
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    if (audioTimeoutRef.current) {
+      clearTimeout(audioTimeoutRef.current);
+    }
 
     setShowMobileOverlay(false);
 
