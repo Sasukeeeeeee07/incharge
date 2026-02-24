@@ -13,7 +13,7 @@ const QuizImportModal = ({ isOpen, onClose, onImport }) => {
 
         // Pre-process: Ensure options start on new lines
         // Handles cases where options are pasted on one line
-        const formattedText = text.replace(/([A-D]\.)/g, '\n$1');
+        const formattedText = text.replace(/(^|\n|\s+)([a-eA-E][\.\)])/g, '$1\n$2');
 
         const lines = formattedText.split('\n');
         const questions = [];
@@ -23,17 +23,29 @@ const QuizImportModal = ({ isOpen, onClose, onImport }) => {
             const trimmedLine = line.trim();
             if (!trimmedLine) return;
 
-            // Detect Question: Starts with number followed by dot
-            const questionMatch = trimmedLine.match(/^\d+\.\s+(.+)/);
-            if (questionMatch) {
-                if (currentQuestion) questions.push(currentQuestion);
-                currentQuestion = {
-                    questionText: questionMatch[1].trim(),
-                    options: []
-                };
+            // Detect Option: Starts with letter A-E followed by dot, paren, or dash
+            const optionMatch = trimmedLine.match(/^[a-eA-E][\.\)\-]\s*(.+)/);
+
+            // Detect explicit Question number
+            const explicitQuestionMatch = trimmedLine.match(/^(?:Q|q)?\s*\d+[\.\)\-]?\s*(.+)/);
+
+            if (!optionMatch) {
+                // Format the question text by stripping the number prefix if it has one
+                let qText = explicitQuestionMatch ? explicitQuestionMatch[1].trim() : trimmedLine;
+
+                // If prior question has no options, concatenate text (supports multi-line questions)
+                if (currentQuestion && currentQuestion.options.length === 0) {
+                    currentQuestion.questionText += " " + qText;
+                } else {
+                    if (currentQuestion) questions.push(currentQuestion);
+                    currentQuestion = {
+                        questionText: qText,
+                        options: []
+                    };
+                }
             }
-            // Detect Option: Starts with letter A-D followed by dot
-            else if (currentQuestion && trimmedLine.match(/^[A-D]\.\s+/)) {
+            // Detect Option
+            else if (currentQuestion && optionMatch) {
                 let optionText = trimmedLine;
                 let score = null;
                 let type = null;
@@ -60,7 +72,7 @@ const QuizImportModal = ({ isOpen, onClose, onImport }) => {
                 }
 
                 // Remove option prefix (A. B. C. D.)
-                optionText = optionText.replace(/^[A-D]\.\s+/, '').trim();
+                optionText = optionText.replace(/^[a-eA-E][\.\)\-]\s*/, '').trim();
 
                 currentQuestion.options.push({
                     text: optionText,

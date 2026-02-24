@@ -101,14 +101,19 @@ const QuizPage = () => {
           setResult(attempt);
           setCompleted(true);
           setResponses(attempt.responses);
-          setView('take-quiz');
+          setView('result');
         } else if (attempt && attempt.status === 'started') {
-          setView('quiz');
           setResponses(attempt.responses || []);
           setCurrentQuestionIndex(attempt.currentQuestionIndex || 0);
-          if (attempt.language) setCurrentLanguage(attempt.language);
+
+          if (attempt.language) {
+            setCurrentLanguage(attempt.language);
+            setView('quiz'); // Skip language selection, go straight to quiz
+          } else {
+            setView('language-selection'); // Force language selection if not present
+          }
         } else {
-          setView('take-quiz');
+          setView('language-selection');
           setCurrentQuestionIndex(0);
           setResponses([]);
         }
@@ -209,7 +214,16 @@ const QuizPage = () => {
     setShowMobileOverlay(false);
 
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      // Save progress before moving
+      axios.put(`${API_BASE_URL}/quiz/progress`, {
+        quizId: quiz._id,
+        responses: responses,
+        currentQuestionIndex: nextIndex,
+        language: currentLanguage
+      }).catch(err => console.error("Failed to save progress", err));
+
+      setCurrentQuestionIndex(nextIndex);
       setSelectedAnswerType(null);
     } else {
       submitQuiz(responses);
@@ -243,7 +257,7 @@ const QuizPage = () => {
       <div
         className="cursor-pointer flex items-center"
         onClick={() => {
-          if (quiz) setView('take-quiz');
+          if (quiz) setView(completed ? 'result' : 'language-selection');
           else setView('history');
         }}
       >
@@ -259,10 +273,10 @@ const QuizPage = () => {
 
         {quiz && (
           <button
-            onClick={() => setView('take-quiz')}
-            className={`flex items-center gap-2 px-3 py-5 rounded-lg transition-colors ${view === 'take-quiz' || (view === 'quiz' && !completed) ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+            onClick={() => setView(completed ? 'result' : 'language-selection')}
+            className={`flex items-center gap-2 px-3 py-5 rounded-lg transition-colors ${['language-selection', 'quiz', 'result'].includes(view) ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
           >
-            <PlayCircle size={18} /> <span className="hidden sm:inline">{t('take_quiz')}</span>
+            <PlayCircle size={18} /> <span className="hidden sm:inline">{completed ? t('view_results') || 'Results' : t('take_quiz')}</span>
           </button>
         )}
 
@@ -339,6 +353,7 @@ const QuizPage = () => {
                   onClick={() => {
                     setCurrentLanguage(lang.code);
                     setView('quiz');
+                    // Progress is retained automatically because setCurrentQuestionIndex is populated by fetchInitialData
                   }}
                   className="p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-accent-primary/10 hover:border-accent-primary/50 transition-all text-xl font-semibold active:scale-[0.98]"
                 >
