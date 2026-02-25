@@ -73,6 +73,26 @@ const Speedometer = ({ result, score }) => {
 
   return (
     <div className="w-full flex flex-col items-center justify-center p-4">
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2, duration: 0.5 }}
+        className="text-center mt-6 text-base sm:text-lg font-medium text-text-secondary"
+      >
+        Today you were{' '}
+        <span className="text-red-400 font-black text-xl sm:text-2xl">
+          {total > 0 ? Math.round((charge / total) * 100) : 0}%
+        </span>
+        {' '}
+        <span className="text-red-400/80 font-semibold">In-Charge</span>
+        {' '}and{' '}
+        <span className="text-blue-400 font-black text-xl sm:text-2xl">
+          {total > 0 ? Math.round((control / total) * 100) : 0}%
+        </span>
+        {' '}
+        <span className="text-blue-400/80 font-semibold">In-Control</span>
+      </motion.p>
+      <div>&nbsp;</div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -118,25 +138,7 @@ const Speedometer = ({ result, score }) => {
         </div>
 
         {/* Summary sentence */}
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 0.5 }}
-          className="text-center mt-6 text-base sm:text-lg font-medium text-text-secondary"
-        >
-          Today you were{' '}
-          <span className="text-red-400 font-black text-xl sm:text-2xl">
-            {total > 0 ? Math.round((charge / total) * 100) : 0}%
-          </span>
-          {' '}
-          <span className="text-red-400/80 font-semibold">In-Charge</span>
-          {' '}and{' '}
-          <span className="text-blue-400 font-black text-xl sm:text-2xl">
-            {total > 0 ? Math.round((control / total) * 100) : 0}%
-          </span>
-          {' '}
-          <span className="text-blue-400/80 font-semibold">In-Control</span>
-        </motion.p>
+
 
       </motion.div>
     </div>

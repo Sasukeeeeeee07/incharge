@@ -8,13 +8,28 @@ const RoleToggle = ({ role, onNext }) => {
   const isControl = role === 'In-Control';
   const isActive = isCharge || isControl;
 
+  const [windowDims, setWindowDims] = React.useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800
+  });
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setWindowDims({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isShortScreen = windowDims.height < 700;
+
   // Configuration — responsive sizes
-  const dotSize = 58;
-  const padding = 5;
-  const trackHeight = 70;
+  const dotSize = isShortScreen ? 40 : 58;
+  const padding = isShortScreen ? 3 : 5;
+  const trackHeight = isShortScreen ? 50 : 70;
 
   // Fit within mobile screen (viewport - card padding ~48px), max 320px
-  const containerWidth = Math.min(typeof window !== 'undefined' ? window.innerWidth - 48 : 320, 320);
+  const containerWidth = Math.min(windowDims.width - 48, isShortScreen ? 250 : 320);
 
   // Calculate dot positions
   const maxMove = containerWidth - dotSize - padding * 2;
@@ -24,10 +39,11 @@ const RoleToggle = ({ role, onNext }) => {
   const shadowColor = isCharge ? 'rgba(34, 197, 94, 0.6)' : isControl ? 'rgba(239, 68, 68, 0.6)' : 'rgba(0,0,0,0.3)';
 
   return (
-    <div className="flex flex-col items-center justify-center mt-8 w-full">
+    <div className="flex flex-col items-center justify-center mt-2 md:mt-4 lg:mt-8 w-full shrink-0">
       <div className="relative">
         {/* Toggle Background */}
         <motion.div
+          // ... (keep animations the same) ...
           animate={{
             backgroundColor: isCharge ? '#22c55e' : isControl ? '#ef4444' : '#334155',
             boxShadow: isActive ? `0 0 20px ${shadowColor}` : 'inset 0 2px 10px rgba(0,0,0,0.3)',
@@ -39,7 +55,7 @@ const RoleToggle = ({ role, onNext }) => {
             scale: { repeat: isActive ? Infinity : 0, duration: 1.5, repeatType: "reverse" }
           }}
           style={{ width: containerWidth, height: trackHeight + padding }}
-          className="rounded-full flex items-center relative overflow-hidden border-4 border-white/5"
+          className="rounded-full flex items-center relative overflow-hidden border-2 md:border-4 border-white/5 mx-auto"
         >
           {/* Images inside the toggle track */}
           <AnimatePresence>
@@ -52,7 +68,7 @@ const RoleToggle = ({ role, onNext }) => {
                 animate={{ opacity: 1, x: 0, scale: 1, rotate: 0 }}
                 exit={{ opacity: 0, x: -20, scale: 0 }}
                 transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                className="absolute left-4 h-[90%] object-contain pointer-events-none"
+                className="absolute left-2 md:left-4 h-[90%] object-contain pointer-events-none"
                 style={{ top: '5%' }}
               />
             )}
@@ -65,7 +81,7 @@ const RoleToggle = ({ role, onNext }) => {
                 animate={{ opacity: 1, x: 0, scale: 1, rotate: 0 }}
                 exit={{ opacity: 0, x: 20, scale: 0 }}
                 transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                className="absolute right-4 h-[90%] object-contain pointer-events-none"
+                className="absolute right-2 md:right-4 h-[90%] object-contain pointer-events-none"
                 style={{ top: '5%' }}
               />
             )}
@@ -85,7 +101,7 @@ const RoleToggle = ({ role, onNext }) => {
                   if (onNext) onNext();
                 }}
               >
-                <span className="text-white font-black text-xl tracking-widest uppercase drop-shadow-md bg-black/20 hover:bg-black/40 px-6 py-2 rounded-full transition-colors border border-white/20">
+                <span className="text-white font-black text-sm md:text-xl tracking-widest uppercase drop-shadow-md bg-black/20 hover:bg-black/40 px-4 py-1 md:px-6 md:py-2 rounded-full transition-colors border border-white/20 whitespace-nowrap">
                   Next &gt;&gt;
                 </span>
               </motion.div>

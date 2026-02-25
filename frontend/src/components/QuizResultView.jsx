@@ -21,6 +21,8 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
         </button>
       )}
 
+
+
       <div className="w-full flex-1 flex flex-col items-center justify-center lg:justify-start">
         {showDetails ? (
           /* Detailed results */
@@ -46,7 +48,7 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
                     {/* Correct / Wrong badge */}
                     <div className={`shrink-0 px-3 py-1 rounded-full text-xs font-bold text-center min-w-[70px]
                       ${isCorrect ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                      {isCorrect ? '✓ Correct' : '✗ Wrong'}
+                      {isCorrect ? '✓ In-charge' : '✗ In-control'}
                     </div>
                   </div>
 

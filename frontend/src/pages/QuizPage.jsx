@@ -253,7 +253,7 @@ const QuizPage = () => {
   };
 
   const renderNavbar = () => (
-    <header className="px-4 md:px-10 py-3 md:py-5 flex justify-between items-center border-b border-blue-200/10 bg-blue-900/50 backdrop-blur-md sticky top-0 z-40">
+    <header className="px-3 sm:px-4 md:px-8 py-[1vh] md:py-[1.5vh] flex justify-between items-center border-b border-blue-200/10 bg-blue-900/50 backdrop-blur-md sticky top-0 z-40 shrink-0">
       <div
         className="cursor-pointer flex items-center"
         onClick={() => {
@@ -264,35 +264,35 @@ const QuizPage = () => {
         <img
           src="/smmart_Logo.png"
           alt="Smmart Logo"
-          className="h-8 md:h-12 w-auto object-contain transition-transform hover:scale-105"
+          className="h-[4vh] sm:h-[4.5vh] md:h-[5vh] min-h-[24px] w-auto object-contain transition-transform hover:scale-105"
         />
       </div>
 
-      <div className="flex items-center gap-2 md:gap-5">
-        <span className="text-text-secondary hidden lg:inline">{t('welcome')}, {user?.name}</span>
+      <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
+        <span className="text-text-secondary hidden xl:inline">{t('welcome')}, {user?.name}</span>
 
         {quiz && (
           <button
             onClick={() => setView(completed ? 'result' : 'language-selection')}
-            className={`flex items-center gap-2 px-3 py-5 rounded-lg transition-colors ${['language-selection', 'quiz', 'result'].includes(view) ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-[1vh] sm:py-[1.2vh] md:py-[1.5vh] text-xs sm:text-sm md:text-base rounded-lg transition-colors ${['language-selection', 'quiz', 'result'].includes(view) ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
           >
-            <PlayCircle size={18} /> <span className="hidden sm:inline">{completed ? t('view_results') || 'Results' : t('take_quiz')}</span>
+            <PlayCircle size={18} className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">{completed ? t('view_results') || 'Results' : t('take_quiz')}</span>
           </button>
         )}
 
         <button
           onClick={() => setView('history')}
-          className={`flex items-center gap-2 px-3 py-5 rounded-lg transition-colors ${view === 'history' || view === 'history-detail' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
+          className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-[1vh] sm:py-[1.2vh] md:py-[1.5vh] text-xs sm:text-sm md:text-base rounded-lg transition-colors ${view === 'history' || view === 'history-detail' ? 'bg-accent-primary/20 text-accent-primary' : 'text-text-secondary hover:text-white hover:bg-white/5'}`}
         >
-          <History size={18} /> <span className="hidden sm:inline">{t('quiz_history')}</span>
+          <History size={18} className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">{t('quiz_history')}</span>
         </button>
 
-        <button onClick={() => navigate('/profile')} className="flex items-center gap-2 px-3 py-5 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5">
-          <UserCircle size={18} /> <span className="hidden sm:inline">{t('profile')}</span>
+        <button onClick={() => navigate('/profile')} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-[1vh] sm:py-[1.2vh] md:py-[1.5vh] text-xs sm:text-sm md:text-base rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-white/5">
+          <UserCircle size={18} className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">{t('profile')}</span>
         </button>
 
-        <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-5 rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-red-900">
-          <LogOut size={18} /> <span className="hidden sm:inline">{t('logout')}</span>
+        <button onClick={handleLogout} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-[1vh] sm:py-[1.2vh] md:py-[1.5vh] text-xs sm:text-sm md:text-base rounded-lg transition-colors text-text-secondary hover:text-white hover:bg-red-900">
+          <LogOut size={18} className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">{t('logout')}</span>
         </button>
       </div>
     </header>
@@ -411,7 +411,7 @@ const QuizPage = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 z-0"
+            className="absolute top-[8vh] bottom-0 left-0 right-0 z-0 overflow-hidden"
           >
             <div className="absolute inset-0 bg-black/20 z-10" />
             <video
@@ -422,7 +422,7 @@ const QuizPage = () => {
               playsInline
               preload="auto"
               ref={(el) => { if (el) el.playbackRate = 2.0; }}
-              className="w-full h-full object-cover object-center"
+              className="w-full h-full object-contain md:object-cover object-center"
             />
           </motion.div>
         )}
@@ -433,7 +433,7 @@ const QuizPage = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 z-0"
+            className="absolute top-[8vh] bottom-0 left-0 right-0 z-0 overflow-hidden"
           >
             <div className="absolute inset-0 bg-black/20 z-10" />
             <video
@@ -444,7 +444,7 @@ const QuizPage = () => {
               playsInline
               preload="auto"
               ref={(el) => { if (el) el.playbackRate = 2.0; }}
-              className="w-full h-full object-cover object-center"
+              className="w-full h-full object-contain md:object-cover object-center"
             />
           </motion.div>
         )}
@@ -515,7 +515,7 @@ const QuizPage = () => {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 p-4 md:p-6 lg:pt-8 flex flex-col items-center max-w-7xl mx-auto w-full overflow-y-auto justify-start relative z-10">
+      <main className="flex-1 min-h-0 flex flex-col items-center max-w-7xl mx-auto w-full justify-start relative z-10">
 
         {view === 'take-quiz' && quiz && (
           <div className="w-full">
@@ -614,9 +614,9 @@ const QuizPage = () => {
         )}
 
         {view === 'quiz' && quiz && (
-          <div className="w-full h-full flex flex-col lg:flex-row overflow-hidden relative z-10">
-            <div className={`w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start p-4 lg:p-10 lg:pl-20 overflow-y-auto transition-all duration-500 relative z-20`}>
-              <div className="max-w-xl w-full">
+          <div className="w-full h-full flex flex-col lg:flex-row min-h-0 relative z-10">
+            <div className={`w-full lg:w-1/2 xl:w-[45%] h-full flex flex-col justify-start lg:justify-center items-center lg:items-start p-3 pt-6 sm:p-4 md:p-6 lg:p-8 transition-all duration-500 relative z-20 min-h-0`}>
+              <div className="max-w-lg xl:max-w-xl w-full mx-auto lg:mx-0 flex flex-col min-h-0 max-h-[100%]">
                 <AnimatePresence mode="wait">
                   {(() => {
                     const langKey = currentLanguage?.toLowerCase();
@@ -640,19 +640,21 @@ const QuizPage = () => {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        className="glass-card p-6 md:p-8 relative overflow-hidden backdrop-blur-xl bg-black/40 border-white/10"
+                        className="glass-card flex flex-col p-4 sm:p-5 md:p-6 lg:p-8 relative overflow-hidden backdrop-blur-xl bg-black/40 border-white/10 shrink min-h-0"
                       >
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-primary to-accent-secondary" />
-                        <p className="text-accent-primary font-bold mb-4 tracking-wider text-sm uppercase">
-                          {t('question')} {currentQuestionIndex + 1} {t('of')} {questions.length}
-                        </p>
-                        <h2 className="text-xl md:text-2xl font-bold mb-6 leading-tight">{currentQuestion.questionText}</h2>
+                        <div className="shrink-0">
+                          <p className="text-accent-primary font-bold mb-1 md:mb-2 md:tracking-wider text-xs md:text-sm uppercase">
+                            {t('question')} {currentQuestionIndex + 1} {t('of')} {questions.length}
+                          </p>
+                          <h2 className="text-lg sm:text-xl md:text-[2.2vh] lg:text-[2.5vh] leading-tight font-bold mb-3 md:mb-4">{currentQuestion.questionText}</h2>
+                        </div>
 
-                        <div className="flex flex-col gap-3 mb-6">
+                        <div className="flex flex-col gap-2 overflow-y-auto overflow-x-hidden min-h-0 shrink pr-1 mb-2">
                           {currentQuestion.options.map((option, idx) => (
                             <button
                               key={idx}
-                              className={`group p-4 rounded-xl border border-glass-border bg-bg-secondary/50 text-left transition-all duration-200 active:scale-[0.99]
+                              className={`group p-3 sm:p-4 md:p-2 lg:p-3 rounded-xl border border-glass-border bg-bg-secondary/50 text-left transition-all duration-200 shrink-0
                                     ${selectedAnswerType === option.answerType
                                   ? 'border-white/50 bg-white/10 ring-2 ring-white/20'
                                   : 'hover:border-accent-primary/10 hover:border-accent-primary/50'}
@@ -660,13 +662,14 @@ const QuizPage = () => {
                               onClick={() => handleAnswer(option.answerType)}
                               disabled={!!selectedAnswerType}
                             >
-                              <span className="font-medium text-base text-text-primary group-hover:text-white transition-colors">{option.text}</span>
+                              <span className="font-medium text-sm sm:text-base md:text-[1.8vh] lg:text-[2vh] leading-snug text-text-primary group-hover:text-white transition-colors">{option.text}</span>
                             </button>
                           ))}
                         </div>
 
-                        <RoleToggle role={selectedAnswerType} onNext={handleNext} />
-
+                        <div className="shrink-0 mt-2">
+                          <RoleToggle role={selectedAnswerType} onNext={handleNext} />
+                        </div>
                       </motion.div>
                     );
                   })()}
