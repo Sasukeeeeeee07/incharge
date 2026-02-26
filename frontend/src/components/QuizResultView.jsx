@@ -23,10 +23,10 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
 
 
 
-      <div className="w-full flex-1 flex flex-col items-center justify-center lg:justify-start">
+      <div className="w-full h-full overflow-y-auto min-h-0 flex flex-col items-center justify-start pb-20">
         {showDetails ? (
           /* Detailed results */
-          <div className="glass-card w-full max-w-3xl max-h-[55vh] overflow-y-auto text-left p-0 shadow-lg">
+          <div className="glass-card w-full max-w-3xl text-left p-0 shadow-lg mt-4 shrink-0">
             {questions.map((q, idx) => {
               const response = responses.find(r => r.questionId === q._id);
               const userAnswerType = response?.answerType;
@@ -82,7 +82,7 @@ const QuizResultView = ({ result, responses, quizData, selectedLang, showDetails
           </div>
         ) : (
           /* Speedometer view */
-          <div className="w-full max-w-4xl h-auto flex flex-col items-center justify-center pb-4">
+          <div className="w-full max-w-4xl flex flex-col items-center justify-start mt-4 shrink-0 px-2 sm:px-4">
             <Speedometer result={result.result} score={result.score} />
           </div>
         )}

@@ -5,10 +5,30 @@ const ConfigurableGauge = ({ score, total, label, color, delay }) => {
   const percentage = total > 0 ? (score / total) : 0;
   const angle = percentage * 180 - 90; // -90 to +90 degrees for semi-circle
 
+  const colorMap = {
+    green: {
+      bgGlow: 'bg-green-500/10',
+      stroke: '#22c55e',
+      needle: 'bg-green-400',
+      text: 'text-green-400',
+      shadow: 'rgba(34,197,94,0.5)',
+      scoreText: 'text-green-500/60'
+    },
+    red: {
+      bgGlow: 'bg-red-500/10',
+      stroke: '#ef4444',
+      needle: 'bg-red-400',
+      text: 'text-red-400',
+      shadow: 'rgba(239,68,68,0.5)',
+      scoreText: 'text-red-500/60'
+    }
+  };
+  const config = colorMap[color] || colorMap.red;
+
   return (
     <div className="flex flex-col items-center justify-center p-4 relative">
       {/* Glow Background */}
-      <div className={`absolute inset-0 bg-${color}-500/10 blur-3xl rounded-full`} />
+      <div className={`absolute inset-0 ${config.bgGlow} blur-3xl rounded-full`} />
 
       <div className="relative w-40 h-24 sm:w-48 sm:h-28 overflow-hidden">
         {/* SVG Arc */}
@@ -20,7 +40,7 @@ const ConfigurableGauge = ({ score, total, label, color, delay }) => {
           <motion.path
             d="M 20 100 A 80 80 0 0 1 180 100"
             fill="none"
-            stroke={color === 'blue' ? '#1e3a8a' : (color === 'red' ? '#ef4444' : '#f97316')}
+            stroke={config.stroke}
             strokeWidth="12"
             strokeLinecap="round"
             initial={{ pathLength: 0 }}
@@ -38,7 +58,7 @@ const ConfigurableGauge = ({ score, total, label, color, delay }) => {
           transition={{ type: "spring", stiffness: 60, damping: 20, delay: delay + 0.2 }}
           style={{ translateX: "-50%" }}
         >
-          <div className={`absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-${color}-400 shadow-[0_0_10px_currentColor]`} />
+          <div className={`absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full ${config.needle} shadow-[0_0_10px_currentColor]`} />
         </motion.div>
 
         {/* Pivot */}
@@ -51,13 +71,13 @@ const ConfigurableGauge = ({ score, total, label, color, delay }) => {
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: delay + 0.5 }}
-          className={`text-3xl font-black tracking-tighter ${color === 'blue' ? 'text-blue-500' : `text-${color}-400`}`}
-          style={{ textShadow: `0 0 20px ${color === 'blue' ? 'rgba(30,58,138,0.5)' : (color === 'red' ? 'rgba(239,68,68,0.5)' : 'rgba(249,115,22,0.5)')}` }}
+          className={`text-3xl font-black tracking-tighter ${config.text}`}
+          style={{ textShadow: `0 0 20px ${config.shadow}` }}
         >
           {Math.round(percentage * 100)}%
         </motion.div>
         <div className="text-xs uppercase tracking-widest text-text-secondary font-bold mt-1">{label}</div>
-        <div className={`text-xs font-mono mt-1 text-${color}-500/60`}>({score} / {total})</div>
+        <div className={`text-xs font-mono mt-1 ${config.scoreText}`}>({score} / {total})</div>
       </div>
     </div>
   );
@@ -80,32 +100,32 @@ const Speedometer = ({ result, score }) => {
         className="text-center mt-6 text-base sm:text-lg font-medium text-text-secondary"
       >
         Today you were{' '}
-        <span className="text-red-400 font-black text-xl sm:text-2xl">
+        <span className="text-green-400 font-black text-xl sm:text-2xl">
           {total > 0 ? Math.round((charge / total) * 100) : 0}%
         </span>
         {' '}
-        <span className="text-red-400/80 font-semibold">In-Charge</span>
+        <span className="text-green-400/80 font-semibold">In-Charge</span>
         {' '}and{' '}
-        <span className="text-blue-400 font-black text-xl sm:text-2xl">
+        <span className="text-red-400 font-black text-xl sm:text-2xl">
           {total > 0 ? Math.round((control / total) * 100) : 0}%
         </span>
         {' '}
-        <span className="text-blue-400/80 font-semibold">In-Control</span>
+        <span className="text-red-400/80 font-semibold">In-Control</span>
       </motion.p>
       <div>&nbsp;</div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-4xl bg-slate-900/30 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden"
+        className="w-full max-w-4xl bg-slate-900/30 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 mb-12 shadow-2xl relative overflow-hidden shrink-0"
       >
         {/* Decorative Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-900 via-purple-500 to-red-500 opacity-50" />
-        <div className="absolute -left-10 -top-10 w-40 h-40 bg-blue-900/20 blur-[60px] rounded-full pointer-events-none" />
-        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-red-500/20 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-500 to-green-500 opacity-50" />
+        <div className="absolute -left-10 -top-10 w-40 h-40 bg-red-500/20 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-green-500/20 blur-[60px] rounded-full pointer-events-none" />
 
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold uppercase tracking-widest text-text-secondary mb-2">In-Charge OR In-Control</h2>
-          <div className={`text-4xl sm:text-5xl font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-r ${result === 'In-Control' ? 'from-blue-700 to-blue-500' : result === 'In-Charge' ? 'from-red-400 to-red-200' : 'from-slate-300 via-white to-slate-300'}`}>
+          <div className={`text-4xl sm:text-5xl font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-r ${result === 'In-Control' ? 'from-red-600 to-red-400' : result === 'In-Charge' ? 'from-green-400 to-green-200' : 'from-slate-300 via-white to-slate-300'}`}>
             {result}
           </div>
         </div>
@@ -116,7 +136,7 @@ const Speedometer = ({ result, score }) => {
             score={control}
             total={total}
             label="In-Control"
-            color="blue"
+            color="red"
             delay={0.2}
           />
 
@@ -132,7 +152,7 @@ const Speedometer = ({ result, score }) => {
             score={charge}
             total={total}
             label="In-Charge"
-            color="red"
+            color="green"
             delay={0.4}
           />
         </div>

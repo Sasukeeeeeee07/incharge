@@ -1,3 +1,3 @@
-const API_BASE_URL = 'http://13.234.115.152/api';
+const API_BASE_URL = 'https://smmart-incharge-vs-incontrol.com/api';
 
 export default API_BASE_URL;
